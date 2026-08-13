@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>ViaX: Trace</title>
+    <meta name="description" content="ViaX: Trace — monitoramento de grupos do Telegram por palavra-chave. Captura de promoções com controle, visão e administração total." />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="ViaX: Trace" />
+    <meta property="og:description" content="Monitoramento de grupos do Telegram por palavra-chave. Captura de promoções com controle, visão e administração total." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ViaX: Trace" />
+    <meta name="twitter:description" content="Monitoramento de grupos do Telegram por palavra-chave. Captura de promoções com controle, visão e administração total." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Zero-flash theme bootstrap: runs before React mounts -->
+    <script>
+      (function () {
+        var explicit = localStorage.getItem('vx-theme-explicit');
+        var dark = explicit === 'dark' ||
+          (!explicit && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

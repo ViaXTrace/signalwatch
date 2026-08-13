@@ -1,0 +1,3 @@
+- [Escopo de notificações](telegram-notification-scope.md) — o produto não terá bot no Telegram; alertas ficam exclusivamente dentro do SaaS.
+- [ViaX: Trace estado de implementação](signalwatch-implementation-state.md) — o que foi construído (backend, DB, frontend) e o que falta (listener Telegram populando messageLink, Pix).
+- [ViaX: Trace identidade de marca](brand-identity.md) — nome, cores, logo e design system do projeto.

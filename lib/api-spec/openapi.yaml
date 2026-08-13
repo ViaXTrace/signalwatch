@@ -3,13 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SignalWatch API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Operational overview
+  - name: alerts
+    description: Matched Telegram messages
+  - name: groups
+    description: Telegram groups available to the authorized account
+  - name: rules
+    description: Monitoring rules
+  - name: connection
+    description: Telegram account connection
+  - name: billing
+    description: Plans and Mercado Pago checkout
+  - name: preferences
+    description: User preferences
 paths:
   /healthz:
     get:
@@ -24,7 +38,402 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List matched alerts
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: groupId
+          in: query
+          schema:
+            type: string
+        - name: ruleId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, unread, read, archived, favorite]
+            default: all
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, 7d, 30d, all]
+            default: 7d
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+  /alerts/{alertId}/read:
+    patch:
+      operationId: markAlertRead
+      tags: [alerts]
+      summary: Mark an alert as read or unread
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertReadUpdate"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+  /alerts/{alertId}/archive:
+    patch:
+      operationId: archiveAlert
+      tags: [alerts]
+      summary: Archive or restore an alert
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertArchiveUpdate"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+  /alerts/{alertId}/favorite:
+    patch:
+      operationId: favoriteAlert
+      tags: [alerts]
+      summary: Favorite or unfavorite an alert
+      parameters:
+        - $ref: "#/components/parameters/AlertId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertFavoriteUpdate"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+  /groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      summary: List available Telegram groups
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, active, paused, unavailable]
+            default: all
+      responses:
+        "200":
+          description: Group list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TelegramGroup"
+  /groups/{groupId}/monitoring:
+    patch:
+      operationId: updateGroupMonitoring
+      tags: [groups]
+      summary: Start or pause monitoring for a group
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupMonitoringUpdate"
+      responses:
+        "200":
+          description: Updated group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramGroup"
+  /groups/sync:
+    post:
+      operationId: syncGroups
+      tags: [groups]
+      summary: Refresh groups from the authorized Telegram account
+      responses:
+        "200":
+          description: Synchronized group list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TelegramGroup"
+  /rules:
+    get:
+      operationId: listRules
+      tags: [rules]
+      summary: List monitoring rules
+      responses:
+        "200":
+          description: Rule list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KeywordRule"
+    post:
+      operationId: createRule
+      tags: [rules]
+      summary: Create a monitoring rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "201":
+          description: Created rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeywordRule"
+  /rules/{ruleId}:
+    patch:
+      operationId: updateRule
+      tags: [rules]
+      summary: Update a monitoring rule
+      parameters:
+        - $ref: "#/components/parameters/RuleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "200":
+          description: Updated rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KeywordRule"
+    delete:
+      operationId: deleteRule
+      tags: [rules]
+      summary: Delete a monitoring rule
+      parameters:
+        - $ref: "#/components/parameters/RuleId"
+      responses:
+        "204":
+          description: Rule deleted
+  /connection/status:
+    get:
+      operationId: getConnectionStatus
+      tags: [connection]
+      summary: Get Telegram connection status
+      responses:
+        "200":
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramConnection"
+  /connection/qr:
+    post:
+      operationId: createConnectionQr
+      tags: [connection]
+      summary: Create a Telegram QR authorization request
+      responses:
+        "200":
+          description: QR authorization state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrAuthorization"
+  /connection/sync:
+    post:
+      operationId: refreshConnection
+      tags: [connection]
+      summary: Refresh Telegram connection and groups
+      responses:
+        "200":
+          description: Connection state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramConnection"
+  /connection/disconnect:
+    post:
+      operationId: disconnectTelegram
+      tags: [connection]
+      summary: Disconnect the personal Telegram session
+      responses:
+        "200":
+          description: Disconnected connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramConnection"
+  /billing/plans:
+    get:
+      operationId: listBillingPlans
+      tags: [billing]
+      summary: List available billing plans
+      responses:
+        "200":
+          description: Billing plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BillingPlan"
+  /billing/status:
+    get:
+      operationId: getBillingStatus
+      tags: [billing]
+      summary: Get current subscription and payment status
+      responses:
+        "200":
+          description: Billing status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingStatus"
+  /billing/checkout:
+    post:
+      operationId: createPixCheckout
+      tags: [billing]
+      summary: Create a Mercado Pago Pix checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "201":
+          description: Pix checkout state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PixCheckout"
+  /billing/webhook:
+    post:
+      operationId: receivePaymentWebhook
+      tags: [billing]
+      summary: Receive Mercado Pago payment updates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+                $ref: "#/components/schemas/WebhookInput"
+      responses:
+        "200":
+          description: Webhook accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookAck"
+  /preferences:
+    get:
+      operationId: getPreferences
+      tags: [preferences]
+      summary: Get user preferences
+      responses:
+        "200":
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreference"
+    patch:
+      operationId: updatePreferences
+      tags: [preferences]
+      summary: Update user preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreferenceInput"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreference"
 components:
+  parameters:
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema:
+        type: string
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+    RuleId:
+      name: ruleId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +442,357 @@ components:
           type: string
       required:
         - status
+    DashboardSummary:
+      type: object
+      required: [alertsToday, unreadAlerts, activeRules, monitoredGroups, connection, planUsage, recentAlerts]
+      properties:
+        alertsToday:
+          type: number
+        unreadAlerts:
+          type: number
+        activeRules:
+          type: number
+        monitoredGroups:
+          type: number
+        connection:
+          $ref: "#/components/schemas/TelegramConnection"
+        planUsage:
+          $ref: "#/components/schemas/PlanUsage"
+        recentAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
+    Alert:
+      type: object
+      required: [id, groupId, groupName, ruleId, ruleName, message, matchedKeywords, receivedAt, status]
+      properties:
+        id:
+          type: string
+        groupId:
+          type: string
+        groupName:
+          type: string
+        ruleId:
+          type: string
+        ruleName:
+          type: string
+        message:
+          type: string
+        author:
+          type: ["string", "null"]
+        matchedKeywords:
+          type: array
+          items:
+            type: string
+        receivedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [unread, read, archived]
+        favorite:
+          type: boolean
+        messageLink:
+          type: ["string", "null"]
+        deliveryStatus:
+          type: string
+          enum: [internal, unavailable]
+    AlertReadUpdate:
+      type: object
+      required: [read]
+      properties:
+        read:
+          type: boolean
+    AlertArchiveUpdate:
+      type: object
+      required: [archived]
+      properties:
+        archived:
+          type: boolean
+    AlertFavoriteUpdate:
+      type: object
+      required: [favorite]
+      properties:
+        favorite:
+          type: boolean
+    TelegramGroup:
+      type: object
+      required: [id, name, status, monitored, messageCount, lastEventAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        username:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, paused, unavailable]
+        monitored:
+          type: boolean
+        messageCount:
+          type: number
+        lastEventAt:
+          type: ["string", "null"]
+          format: date-time
+        appliedRules:
+          type: number
+    GroupMonitoringUpdate:
+      type: object
+      required: [monitored]
+      properties:
+        monitored:
+          type: boolean
+    KeywordRule:
+      type: object
+      required: [id, name, keywords, groupIds, matchType, active, priority, cooldownMinutes, matchedCount]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        requiredKeywords:
+          type: array
+          items:
+            type: string
+        excludedKeywords:
+          type: array
+          items:
+            type: string
+        groupIds:
+          type: array
+          items:
+            type: string
+        matchType:
+          type: string
+          enum: [partial, exact, regex]
+        active:
+          type: boolean
+        priority:
+          type: number
+        cooldownMinutes:
+          type: number
+        matchedCount:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+    RuleInput:
+      type: object
+      required: [name, keywords, groupIds, matchType, active, priority, cooldownMinutes]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        keywords:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        requiredKeywords:
+          type: array
+          items:
+            type: string
+        excludedKeywords:
+          type: array
+          items:
+            type: string
+        groupIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        matchType:
+          type: string
+          enum: [partial, exact, regex]
+        active:
+          type: boolean
+        priority:
+          type: number
+          minimum: 0
+          maximum: 100
+        cooldownMinutes:
+          type: number
+          minimum: 0
+          maximum: 10080
+    TelegramConnection:
+      type: object
+      required: [status, accountLabel, authorizedAt, lastSyncAt, lastEventAt, availableGroups, monitoringEnabled, connectorAvailable]
+      properties:
+        status:
+          type: string
+          enum: [not_connected, qr_pending, awaiting_confirmation, connected, expired, revoked, disconnected, unavailable]
+        accountLabel:
+          type: ["string", "null"]
+        authorizedAt:
+          type: ["string", "null"]
+          format: date-time
+        lastSyncAt:
+          type: ["string", "null"]
+          format: date-time
+        lastEventAt:
+          type: ["string", "null"]
+          format: date-time
+        availableGroups:
+          type: number
+        monitoringEnabled:
+          type: boolean
+        connectorAvailable:
+          type: boolean
+        message:
+          type: ["string", "null"]
+    QrAuthorization:
+      type: object
+      required: [status, qrData, expiresAt]
+      properties:
+        status:
+          type: string
+          enum: [qr_pending, awaiting_confirmation, connected, unavailable]
+        qrData:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        message:
+          type: ["string", "null"]
+    BillingPlan:
+      type: object
+      required: [id, name, monthlyPriceCents, annualPriceCents, groupsLimit, keywordsLimit, destinationsLimit, historyDays]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        monthlyPriceCents:
+          type: number
+        annualPriceCents:
+          type: number
+        groupsLimit:
+          type: number
+        keywordsLimit:
+          type: number
+        destinationsLimit:
+          type: number
+        historyDays:
+          type: number
+        features:
+          type: array
+          items:
+            type: string
+    PlanUsage:
+      type: object
+      required: [planName, groupsUsed, groupsLimit, keywordsUsed, keywordsLimit, historyDays]
+      properties:
+        planName:
+          type: string
+        groupsUsed:
+          type: number
+        groupsLimit:
+          type: number
+        keywordsUsed:
+          type: number
+        keywordsLimit:
+          type: number
+        historyDays:
+          type: number
+    BillingStatus:
+      type: object
+      required: [state, plan, usage]
+      properties:
+        state:
+          type: string
+          enum: [trial, awaiting_payment, paid, expired, rejected, active, canceled, grace_period, blocked]
+        plan:
+          $ref: "#/components/schemas/BillingPlan"
+        usage:
+          $ref: "#/components/schemas/PlanUsage"
+        nextBillingAt:
+          type: ["string", "null"]
+          format: date-time
+        lastPaymentAt:
+          type: ["string", "null"]
+          format: date-time
+        checkout:
+          oneOf:
+            - $ref: "#/components/schemas/PixCheckout"
+            - type: "null"
+    CheckoutInput:
+      type: object
+      required: [planId, cycle]
+      properties:
+        planId:
+          type: string
+        cycle:
+          type: string
+          enum: [monthly, annual]
+    PixCheckout:
+      type: object
+      required: [id, status, amountCents, expiresAt]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [pending, paid, expired, rejected, unavailable]
+        amountCents:
+          type: number
+        qrCode:
+          type: ["string", "null"]
+        copyPaste:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+          format: date-time
+        message:
+          type: ["string", "null"]
+    WebhookAck:
+      type: object
+      required: [received]
+      properties:
+        received:
+          type: boolean
+    WebhookInput:
+      type: object
+      additionalProperties: true
+    UserPreference:
+      type: object
+      required: [language, theme, timezone, dateFormat, timeFormat, inAppNotifications]
+      properties:
+        language:
+          type: string
+          enum: [pt-BR, en]
+        theme:
+          type: string
+          enum: [light, dark, system]
+        timezone:
+          type: string
+        dateFormat:
+          type: string
+        timeFormat:
+          type: string
+        inAppNotifications:
+          type: boolean
+    PreferenceInput:
+      type: object
+      properties:
+        language:
+          type: string
+          enum: [pt-BR, en]
+        theme:
+          type: string
+          enum: [light, dark, system]
+        timezone:
+          type: string
+        dateFormat:
+          type: string
+        timeFormat:
+          type: string
+        inAppNotifications:
+          type: boolean
 

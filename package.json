@@ -15,5 +15,13 @@
   "devDependencies": {
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bufferutil",
+      "utf-8-validate",
+      "@clerk/shared",
+      "es5-ext"
+    ]
   }
 }

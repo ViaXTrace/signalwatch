@@ -1,0 +1,1107 @@
+
+O produto deve transmitir:
+
+- Controle;
+- Precisão;
+- Segurança;
+- Velocidade;
+- Redução de ruído;
+- Inteligência operacional;
+- Privacidade;
+- Confiança.
+
+A proposta de valor principal é:
+
+“Encontre o que importa nos seus grupos, sem precisar acompanhar tudo manualmente.”
+
+Não crie uma interface genérica de administração. O produto deve parecer uma ferramenta especializada, refinada e comercialmente pronta.
+
+# 1. Conexão da conta do Telegram, bot de notificações e responsabilidade de uso
+
+A plataforma deve operar com duas integrações isoladas:
+
+1. Uma sessão da conta pessoal do Telegram do cliente, criada somente após consentimento explícito por QR Code e utilizada exclusivamente para leitura dos grupos autorizados;
+2. Um bot central do Telegram, criado e administrado pela empresa responsável pelo SignalWatch, utilizado exclusivamente para enviar notificações privadas.
+
+Deve existir uma única configuração oficial do bot de notificações para o MVP, compartilhada de forma segura entre os clientes, com isolamento rigoroso dos grupos, sessões, alertas e dados de cada organização.
+
+O bot de notificações deverá ser criado previamente pela empresa responsável no próprio Telegram por meio do `@BotFather`. O responsável pela operação fornecerá o token desse bot para a configuração inicial da aplicação, exclusivamente através de secrets ou mecanismo equivalente. O token nunca deverá ser solicitado, exibido ou enviado pelo cliente.
+
+A leitura dos grupos não deverá depender do bot de notificações. Ela deverá utilizar a conta pessoal do Telegram do próprio cliente, conectada mediante QR Code gerado por uma integração compatível com a API de cliente do Telegram. A plataforma deve deixar claro que o cliente está autorizando uma sessão da própria conta pessoal.
+
+A plataforma não deve:
+
+- Solicitar senha, código SMS ou código de login diretamente na plataforma;
+- Acessar a conta pessoal do Telegram sem consentimento explícito;
+- Acessar contas de terceiros;
+- Permitir que cada cliente crie ou conecte seu próprio bot de notificações;
+- Permitir conexão silenciosa ou não autorizada da conta pessoal;
+- Monitorar grupos que não estejam disponíveis para a conta pessoal autorizada;
+- Expor a sessão da conta pessoal, o token do bot ou qualquer credencial na interface, nos logs, nas respostas da API ou em mensagens de erro;
+- Enviar mensagens automaticamente para grupos;
+- Entrar em contato automaticamente com participantes;
+- Responder ou negociar em nome do cliente;
+- Enviar publicidade para os grupos;
+- Adicionar participantes;
+- Criar conversas automáticas;
+- Agir como se fosse o cliente.
+
+O objetivo da plataforma é exclusivamente:
+
+1. Utilizar a sessão da conta pessoal do Telegram autorizada pelo próprio cliente;
+2. Processar somente mensagens dos grupos selecionados pelo cliente e disponíveis para essa conta;
+3. Identificar mensagens que correspondam às regras configuradas;
+4. Exibir alertas dentro da plataforma;
+5. Enviar uma cópia do alerta para o chat privado do próprio cliente através do bot oficial de notificações, depois que o cliente iniciar uma conversa com esse bot.
+
+A configuração técnica do bot de notificações deve acontecer antes da disponibilização do produto, pelo responsável da plataforma, usando o token fornecido de forma segura. A configuração da conta pessoal deve acontecer somente após o cliente escanear o QR Code e confirmar a autorização no próprio aplicativo do Telegram. O cliente não deve informar ou visualizar o token do bot.
+
+Antes de implementar os conectores, valide:
+
+- A API de cliente do Telegram ou provedor compatível que permita autorização via QR Code;
+- A leitura das mensagens dos grupos acessíveis pela conta pessoal;
+- O armazenamento e a renovação segura da sessão autorizada;
+- A Telegram Bot API para envio das notificações;
+- O uso de webhook ou long polling para o bot de notificações;
+- A geração de links diretos para as mensagens;
+- As limitações, políticas e permissões aplicáveis a cada integração.
+
+Não crie uma integração falsa, simulada ou baseada em acesso oculto.
+
+Caso a API de cliente do Telegram, a sessão autorizada, as permissões da conta ou a Telegram Bot API impeçam a implementação real, interrompa essa parte e apresente claramente a limitação. Não crie uma tela que aparente estar funcionando quando a integração real não estiver disponível.
+
+O responsável pela plataforma é responsável por:
+
+- Criar e administrar o bot oficial de notificações no `@BotFather`;
+- Manter o token do bot em secrets;
+- Configurar e manter o webhook ou mecanismo de recebimento de atualizações do bot;
+- Escolher e configurar o conector seguro para sessões de contas pessoais;
+
+O cliente é responsável por:
+- Autorizar a própria conta do Telegram através do QR Code;
+- Manter o acesso aos grupos que deseja monitorar;
+- Selecionar os grupos que deseja monitorar;
+- Criar as regras;
+- Definir as palavras-chave;
+- Utilizar os alertas de forma responsável;
+- Decidir se entrará em contato manualmente com o autor de uma publicação.
+
+A plataforma não deve criar uma etapa operacional exigindo o consentimento individual de cada participante dos grupos.
+
+O consentimento e a responsabilidade de uso da plataforma devem estar concentrados no cliente que:
+
+- Cria a conta;
+- Paga pelo plano e acessa a plataforma;
+- Autoriza a sessão da própria conta do Telegram;
+- Inicia uma conversa privada com o bot oficial de notificações;
+- Escolhe os grupos;
+- Configura as regras;
+- Recebe os alertas.
+
+Os termos de uso e a política de privacidade devem explicar de forma transparente que:
+
+- A conta pessoal do Telegram do cliente será conectada somente após consentimento explícito via QR Code;
+- A sessão autorizada poderá disponibilizar mensagens dos grupos acessíveis à conta e selecionados pelo cliente;
+- O bot oficial de notificações é criado e administrado pela empresa responsável;
+- Os alertas serão enviados ao chat privado do cliente através desse bot;
+- A plataforma não acessará contas de terceiros nem enviará mensagens automáticas aos grupos;
+- A disponibilidade das mensagens depende das permissões, da sessão e das configurações do Telegram.
+
+# 2. Público-alvo
+
+A plataforma deve atender principalmente:
+
+- Pequenas empresas;
+- Agências de marketing;
+- Times comerciais;
+- Profissionais de compras;
+- Corretores;
+- Prestadores de serviço;
+- Empresas que monitoram oportunidades;
+- Profissionais que acompanham anúncios;
+- Operações que participam de muitos grupos;
+- Pessoas que precisam localizar pedidos, ofertas, reclamações ou oportunidades específicas.
+
+Exemplos de uso:
+
+- Encontrar pessoas procurando determinado serviço;
+- Identificar pedidos de orçamento;
+- Localizar oportunidades comerciais;
+- Detectar mensagens com determinadas necessidades;
+- Acompanhar reclamações ou problemas;
+- Encontrar ofertas, produtos ou solicitações específicas;
+- Receber alertas sobre termos importantes em grupos selecionados.
+
+# 3. Criação da conta
+
+Criar uma conta utilizando autenticação gerenciada e segura.
+
+Não criar autenticação local insegura.
+
+Utilizar uma solução gerenciada, como Clerk ou equivalente.
+
+Campos mínimos:
+
+- Nome;
+- E-mail;
+- Senha ou provedor social;
+- Nome da empresa;
+- Aceite dos termos de uso;
+- Aceite da política de privacidade.
+
+Após o cadastro, direcionar o cliente para o onboarding inicial.
+
+Rotas sugeridas:
+
+- `/`
+- `/login`
+- `/signup`
+- `/onboarding`
+
+# 4. Onboarding inicial
+
+O onboarding deve ser curto, progressivo e agradável.
+
+Mostrar uma barra ou indicador de progresso para que o cliente saiba em qual etapa está.
+
+## Etapa 1 — Idioma
+
+Permitir selecionar:
+
+- Português do Brasil;
+- Inglês.
+
+Preparar a estrutura para adicionar novos idiomas no futuro.
+
+O idioma padrão deve ser Português do Brasil.
+
+## Etapa 2 — Preferência visual
+
+Permitir escolher:
+
+- Tema claro;
+- Tema escuro;
+- Seguir preferência do sistema.
+
+A preferência deve ser salva na conta e aplicada imediatamente.
+
+## Etapa 3 — Configurações regionais
+
+Permitir definir:
+
+- Fuso horário;
+- Formato de data;
+- Formato de horário;
+- Preferências de notificação.
+
+Usar `America/Sao_Paulo` como opção padrão quando apropriado.
+
+## Etapa 4 — Conexão autorizada da conta pessoal do Telegram
+
+A integração técnica do bot de notificações já deve estar configurada pela empresa responsável. Nesta etapa, o cliente autoriza a sessão da própria conta pessoal do Telegram para que a plataforma possa ler os grupos aos quais essa conta tem acesso. O cliente não deve fornecer senha, código de login ou token.
+
+Fluxo:
+
+1. Exibir uma explicação clara sobre quais dados serão acessados e por quê;
+2. Informar que o QR Code autoriza somente a própria conta do cliente e não conecta contas de terceiros;
+3. Gerar um QR Code real pela integração de cliente do Telegram, com validade e expiração;
+4. Orientar o cliente a abrir o Telegram em outro dispositivo e escanear o QR Code;
+5. Aguardar a confirmação da autorização no aplicativo oficial do Telegram;
+6. Confirmar a sessão sem solicitar senha, código SMS ou código de login na plataforma;
+7. Exibir somente informações não sensíveis da conta autorizada, preferencialmente nome e username mascarados;
+8. Detectar os grupos disponíveis para a conta autorizada;
+9. Orientar o cliente a iniciar uma conversa privada com o bot oficial de notificações;
+10. Permitir que o cliente escolha quais grupos deseja monitorar;
+11. Aguardar e validar a chegada de mensagens reais;
+12. Exibir o status atualizado da sessão e do bot de notificações.
+
+Estados da conexão da conta pessoal:
+
+- QR Code aguardando leitura;
+- QR Code expirado;
+- Aguardando confirmação no aplicativo do Telegram;
+- Sessão autorizada;
+- Sessão expirada;
+- Sessão revogada;
+- Conta desconectada;
+- Erro de autenticação;
+- Conta sem acesso ao grupo;
+- Grupo indisponível;
+- Conector de conta pessoal temporariamente indisponível;
+- Bot de notificações indisponível;
+- Falha ao entregar alerta privado.
+
+Nunca solicitar ao cliente na plataforma:
+
+- Senha do Telegram;
+- Código SMS;
+- Código de autenticação da conta pessoal;
+- Token do bot oficial de notificações;
+- Dados de outra conta.
+
+A tela deve deixar claro que a conta pessoal do cliente será acessada somente após o consentimento via QR Code, que o bot oficial de notificações é administrado pela empresa responsável, que nenhum token será solicitado ao cliente e que a plataforma não realiza contato automático com os participantes.
+
+## Etapa 5 — Seleção de grupos
+
+Listar os grupos disponíveis para a sessão autorizada da conta pessoal do cliente.
+
+Permitir:
+
+- Ativar monitoramento;
+- Pausar monitoramento;
+- Selecionar vários grupos;
+- Pesquisar grupos;
+- Ver o status de cada grupo;
+- Ver a quantidade aproximada de mensagens recentes;
+- Ver a data do último evento recebido;
+- Remover um grupo da monitoração.
+
+Exibir uma confirmação antes de começar a monitorar um grupo.
+
+## Etapa 6 — Primeira regra
+
+Permitir criar a primeira regra de monitoramento.
+
+Campos:
+
+- Nome da regra;
+- Palavra ou palavras-chave;
+- Grupo ou grupos monitorados;
+- Tipo de correspondência;
+- Canal de notificação;
+- Ativo ou pausado.
+
+## Etapa 7 — Finalização
+
+Mostrar um resumo com:
+
+- Bot conectado;
+- Grupos selecionados;
+- Regras criadas;
+- Canal de notificação;
+- Plano selecionado;
+- Status do pagamento.
+
+Após a finalização, direcionar para o dashboard.
+
+# 5. Pagamento via Pix
+
+A plataforma será paga.
+
+Depois da criação da conta e antes de liberar o uso completo, apresentar a escolha de plano.
+
+O checkout deve funcionar via Pix e permitir futuramente trocar o provedor de pagamento.
+
+Utilizar um provedor compatível com Pix, como Asaas ou Mercado Pago, por meio de uma camada de abstração.
+
+O checkout deve possuir:
+
+- Seleção de plano;
+- Comparação de recursos;
+- Resumo dos limites;
+- Valor mensal;
+- Valor anual;
+- QR Code Pix;
+- Código Pix copia e cola;
+- Indicação de validade do pagamento;
+- Estado “aguardando pagamento”;
+- Estado “pagamento confirmado”;
+- Estado “pagamento expirado”;
+- Atualização automática via webhook;
+- Histórico de cobranças;
+- Recibos;
+- Troca de plano;
+- Cancelamento;
+- Período de carência configurável.
+
+Nunca confirmar o pagamento apenas pelo retorno do navegador.
+
+A confirmação deve ocorrer através de webhook validado do provedor.
+
+Estados de pagamento:
+
+- Trial;
+- Aguardando pagamento;
+- Pago;
+- Pagamento expirado;
+- Pagamento recusado;
+- Assinatura ativa;
+- Assinatura cancelada;
+- Assinatura em período de carência;
+- Plano bloqueado.
+
+# 6. Planos iniciais
+
+Utilizar estes valores como proposta inicial configurável:
+
+| Plano | Valor mensal | Grupos | Palavras-chave | Destinos | Histórico |
+|---|---:|---:|---:|---:|---:|
+| Starter | R$ 59/mês | 3 | 25 | 1 | 7 dias |
+| Professional | R$ 129/mês | 15 | 150 | 3 | 90 dias |
+| Business | R$ 299/mês | 50 | 500 | 10 | 1 ano |
+| Enterprise | Sob consulta | Personalizado | Personalizado | Personalizado | Personalizado |
+
+## Plano Starter
+
+Para profissionais individuais e pequenos testes.
+
+Inclui:
+
+- Monitoramento de até 3 grupos;
+- Até 25 palavras-chave;
+- Alertas dentro do site;
+- Um destino de notificação;
+- Histórico de 7 dias;
+- Regras simples.
+
+## Plano Professional
+
+Para operações que dependem diariamente dos alertas.
+
+Inclui:
+
+- Monitoramento de até 15 grupos;
+- Até 150 palavras-chave;
+- Até 3 destinos;
+- Histórico de 90 dias;
+- Regras avançadas;
+- Palavras obrigatórias e proibidas;
+- Prioridade de suporte;
+- Relatórios básicos.
+
+## Plano Business
+
+Para equipes e operações com maior volume.
+
+Inclui:
+
+- Monitoramento de até 50 grupos;
+- Até 500 palavras-chave;
+- Até 10 destinos;
+- Histórico de 1 ano;
+- Regras avançadas;
+- Auditoria;
+- Controle por equipe;
+- Relatórios avançados;
+- Retenção configurável;
+- Suporte prioritário.
+
+## Plano Enterprise
+
+Deve permitir:
+
+- Limites personalizados;
+- Múltiplas organizações;
+- Integrações sob medida;
+- Suporte dedicado;
+- Acordos comerciais específicos;
+- Retenção personalizada;
+- Controle avançado de usuários.
+
+Oferecer a opção de pagamento anual com 2 meses grátis.
+
+Valores anuais sugeridos:
+
+- Starter: R$ 590/ano;
+- Professional: R$ 1.290/ano;
+- Business: R$ 2.990/ano.
+
+Os preços devem ser configuráveis sem alteração no código.
+
+# 7. Configuração de palavras-chave
+
+Criar uma área de regras de monitoramento.
+
+Cada regra deve permitir:
+
+- Nome da regra;
+- Uma ou mais palavras-chave;
+- Grupo ou grupos monitorados;
+- Correspondência parcial;
+- Correspondência exata;
+- Ignorar maiúsculas e minúsculas;
+- Ignorar acentos;
+- Palavras obrigatórias;
+- Palavras proibidas;
+- Combinações de palavras;
+- Regex em modo avançado;
+- Prioridade;
+- Status ativo ou pausado;
+- Canal de notificação;
+- Mensagem de teste.
+
+Exemplos de palavras-chave:
+
+- orçamento;
+- cotação;
+- cliente interessado;
+- urgente;
+- disponível;
+- comprar;
+- contrato;
+- problema;
+- cancelamento;
+- instalação;
+- fornecedor;
+- indicação.
+
+O sistema deve normalizar o texto antes de avaliar as regras.
+
+A normalização deve considerar:
+
+- Maiúsculas e minúsculas;
+- Acentos;
+- Espaços duplicados;
+- Caracteres especiais;
+- Pontuação;
+- Variações configuradas pelo usuário.
+
+O motor deve evitar notificações duplicadas.
+
+Permitir configurar um intervalo mínimo entre alertas semelhantes.
+
+# 8. Processamento das mensagens
+
+Quando uma nova mensagem autorizada chegar:
+
+1. Normalizar o texto;
+2. Avaliar as regras ativas;
+3. Identificar quais palavras-chave foram encontradas;
+4. Identificar o grupo correspondente;
+5. Verificar se a mensagem não é duplicada;
+6. Registrar o evento;
+7. Criar uma notificação dentro da plataforma;
+8. Enviar uma cópia para o chat privado do próprio cliente no Telegram através do bot oficial, depois que o cliente tiver iniciado conversa privada com ele;
+9. Registrar o resultado do envio.
+
+O sistema deve preservar a mensagem original sem alterar seu significado.
+
+Exemplo:
+
+“Alerta encontrado
+
+Grupo: Oportunidades Comerciais
+
+Regra: Clientes interessados
+
+Palavra encontrada: orçamento
+
+Mensagem original:
+‘Alguém conhece uma empresa que faça orçamento para implantação de CRM?’
+
+Data: 12/08/2026 às 14:32”
+
+# 9. Notificações
+
+As notificações devem ser destinadas exclusivamente ao cliente que configurou a plataforma.
+
+Quando uma mensagem corresponder a uma palavra-chave:
+
+1. Criar uma notificação dentro da plataforma;
+2. Exibir a mensagem original;
+3. Informar o grupo de origem;
+4. Informar a regra acionada;
+5. Informar a palavra-chave encontrada;
+6. Enviar uma cópia para o chat privado do próprio cliente através do bot oficial de notificações;
+7. Incluir um botão ou link “Abrir mensagem” apontando para a mensagem original quando o Telegram disponibilizar um link compatível;
+8. Informar claramente quando a mensagem não puder ser aberta por falta de acesso ao grupo, mensagem privada ou restrição do Telegram;
+9. Registrar o status de entrega.
+
+A plataforma não deve:
+
+- Enviar mensagens para o grupo monitorado;
+- Responder ao autor da publicação;
+- Iniciar uma conversa automaticamente;
+- Negociar produtos ou serviços;
+- Enviar publicidade;
+- Revelar ao autor da publicação que ele foi monitorado;
+- Agir em nome do cliente;
+- Fazer follow-up automático.
+
+O cliente poderá analisar a mensagem e, se desejar, entrar em contato manualmente com o autor da publicação utilizando seus próprios meios.
+
+Tipos de notificação:
+
+- Nova mensagem encontrada;
+- Regra acionada;
+- Falha na entrega;
+- Conexão perdida;
+- Bot desativado ou integração revogada;
+- Pagamento pendente;
+- Limite do plano próximo do fim;
+- Plano bloqueado.
+
+# 10. Dashboard principal
+
+Criar um dashboard para mostrar rapidamente:
+
+- Alertas encontrados hoje;
+- Alertas não lidos;
+- Regras ativas;
+- Grupos monitorados;
+- Status da conexão;
+- Últimas mensagens filtradas;
+- Uso do plano;
+- Situação do pagamento;
+- Falhas recentes de notificação.
+
+O dashboard deve priorizar informação útil e reduzir o excesso visual.
+
+Não criar gráficos decorativos sem função.
+
+O cliente deve conseguir compreender o estado da operação em poucos segundos.
+
+# 11. Caixa de alertas
+
+Criar uma tela para visualizar todas as mensagens filtradas.
+
+Funcionalidades:
+
+- Lista de alertas;
+- Busca textual;
+- Filtro por grupo;
+- Filtro por regra;
+- Filtro por período;
+- Filtro por status;
+- Marcar como lido;
+- Arquivar;
+- Favoritar;
+- Ver detalhes;
+- Copiar mensagem;
+- Reenviar notificação quando permitido;
+- Ver data e horário;
+- Ver palavra-chave encontrada;
+- Ver status de entrega.
+
+Estados obrigatórios:
+
+- Sem alertas;
+- Carregando;
+- Erro;
+- Nenhuma correspondência;
+- Alertas não enviados;
+- Alertas arquivados;
+- Conexão pausada;
+- Plano bloqueado.
+
+# 12. Grupos monitorados
+
+Criar uma tela para:
+
+- Ver todos os grupos disponíveis;
+- Ativar monitoramento;
+- Pausar monitoramento;
+- Ver quais regras estão aplicadas;
+- Ver volume aproximado de mensagens;
+- Ver último evento recebido;
+- Remover um grupo;
+- Atualizar a conexão;
+- Identificar grupos indisponíveis;
+- Pesquisar grupos;
+- Filtrar grupos ativos e pausados.
+
+# 13. Conexão da conta pessoal e bot oficial de notificações
+
+Criar uma área específica para o gerenciamento da sessão da conta pessoal do Telegram e do bot oficial de notificações. Essa área não deve permitir que o cliente altere o token do bot ou crie outro bot.
+
+Exibir:
+
+- Identidade mascarada da conta pessoal autorizada;
+- Status da sessão da conta pessoal;
+- Data da autorização;
+- Bot oficial de notificações;
+- Username e identificador públicos do bot;
+- Status do bot de notificações;
+- Última sincronização;
+- Último evento recebido;
+- Grupos disponíveis;
+- Botão para gerar novo QR Code;
+- Botão para atualizar a sessão;
+- Botão para atualizar grupos disponíveis;
+- Botão para desconectar a conta pessoal;
+- Histórico de falhas;
+- Instruções para iniciar conversa privada com o bot;
+- Canal de suporte para problemas que exigem alteração da configuração do bot central.
+
+Ao desconectar a conta pessoal do Telegram:
+
+- Preservar as regras;
+- Preservar os grupos selecionados;
+- Pausar o processamento de novas mensagens;
+- Exibir aviso no dashboard;
+- Solicitar uma nova autorização via QR Code para continuar;
+- Invalidar a sessão armazenada com segurança;
+- Nunca revogar o token central do bot de notificações.
+
+# 14. Configurações
+
+Criar áreas para:
+
+- Perfil;
+- Empresa;
+- Idioma;
+- Tema;
+- Fuso horário;
+- Preferências de notificação;
+- Chat privado de destino no Telegram;
+- Sessão da conta pessoal do Telegram;
+- Bot oficial de notificações;
+- Segurança;
+- Sessões ativas;
+- Exportação de dados;
+- Exclusão da conta;
+- Política de retenção;
+- Plano;
+- Faturamento;
+- Histórico de pagamentos.
+
+# 15. Privacidade e segurança
+
+A plataforma deve processar somente as mensagens disponibilizadas pela sessão autorizada da conta pessoal do cliente nos grupos que ele escolher para monitoramento.
+
+Implementar:
+
+- Isolamento de dados por conta e organização;
+- Controle de acesso em todas as requisições;
+- Criptografia do token central do bot e das sessões das contas pessoais;
+- Não armazenar o token central do bot ou as sessões pessoais em texto puro;
+- Não permitir que o token do bot ou as sessões pessoais sejam enviados ao frontend ou expostos ao cliente;
+- Permitir revogação e exclusão da sessão pessoal a qualquer momento;
+- Não reutilizar uma sessão pessoal em outra organização;
+- Minimizar a retenção de mensagens;
+- Permitir configurar o prazo de retenção;
+- Registrar auditoria das ações importantes;
+- Proteger webhooks;
+- Validar assinaturas dos webhooks do Telegram quando aplicável;
+- Impedir acesso de uma organização aos grupos, mensagens e alertas de outra organização;
+- Impedir processamento de grupos que não estejam disponíveis para a sessão pessoal autorizada;
+- Permitir exclusão dos dados do cliente;
+- Informar claramente quais dados são processados;
+- Nunca vender ou compartilhar mensagens;
+- Nunca usar as mensagens para criar perfis externos dos participantes;
+- Nunca enviar mensagens automáticas aos participantes;
+- Nunca criar campanhas automáticas a partir das mensagens;
+- Limitar o acesso interno aos dados;
+- Criar logs de acesso e alterações importantes.
+
+A plataforma deve deixar claro que o cliente controla:
+
+- Qual conta pessoal do Telegram será autorizada;
+- Quais grupos serão monitorados;
+- Quais palavras-chave serão utilizadas;
+- Por quanto tempo os alertas serão armazenados;
+- Quais notificações deseja receber;
+- Quando deseja pausar ou encerrar o próprio monitoramento.
+
+# 16. Páginas esperadas
+
+Criar as seguintes rotas:
+
+- `/`
+  - Página inicial e apresentação do produto.
+
+- `/login`
+  - Login.
+
+- `/signup`
+  - Criação da conta.
+
+- `/onboarding`
+  - Configuração inicial.
+
+- `/app`
+  - Dashboard.
+
+- `/app/alerts`
+  - Alertas filtrados.
+
+- `/app/rules`
+  - Regras e palavras-chave.
+
+- `/app/groups`
+  - Grupos monitorados.
+
+- `/app/connection`
+  - Integração e status do bot do Telegram.
+
+- `/app/billing`
+  - Planos, Pix, pagamentos e histórico.
+
+- `/app/settings`
+  - Preferências, perfil e segurança.
+
+- `/terms`
+  - Termos de uso.
+
+- `/privacy`
+  - Política de privacidade.
+
+Criar estados de:
+
+- Erro;
+- Carregamento;
+- Bot desativado ou integração revogada;
+- Pagamento pendente;
+- Pagamento expirado;
+- Conexão perdida;
+- Plano bloqueado;
+- Grupo indisponível;
+- Nenhum alerta;
+- Nenhuma regra;
+- Nenhum grupo selecionado.
+
+# 17. Entidades principais
+
+Modelar as seguintes entidades:
+
+- User;
+- Organization;
+- Subscription;
+- Payment;
+- PlatformTelegramBot;
+- TelegramAccountSession;
+- TelegramGroupAccess;
+- KeywordRule;
+- Keyword;
+- MatchedMessage;
+- Notification;
+- AuditLog;
+- UserPreference.
+
+Todos os dados devem ser corretamente vinculados à conta ou organização responsável.
+
+# 18. Diretrizes de UI/UX
+
+A interface deve ser sofisticada, objetiva e confiável.
+
+Não utilizar:
+
+- Emojis na interface;
+- Visual infantil;
+- Excesso de gradientes;
+- Cores neon;
+- Ícones sem significado;
+- Cards excessivamente arredondados;
+- Dashboards lotados;
+- Textos técnicos desnecessários;
+- Dados fictícios em fluxos importantes;
+- Botões que não executam ações reais;
+- Cores genéricas sem relação com a identidade do produto;
+- Telas brancas sem personalidade.
+
+Utilizar:
+
+- Hierarquia visual clara;
+- Microinterações discretas;
+- Feedback imediato;
+- Skeletons de carregamento;
+- Toasts objetivos;
+- Confirmações para ações destrutivas;
+- Empty states úteis;
+- Navegação consistente;
+- Formulários curtos;
+- Indicadores claros de status;
+- Animações suaves;
+- Transições entre páginas;
+- Estados de hover bem definidos;
+- Feedback visual após salvar, pausar, excluir ou conectar.
+
+Toda ação importante deve possuir estado visível:
+
+- Iniciando;
+- Processando;
+- Concluída;
+- Falhou;
+- Precisa de atenção.
+
+A experiência deve parecer uma ferramenta que o cliente deseja abrir diariamente, não um painel que ele é obrigado a utilizar.
+
+# 19. Design system
+
+Criar tokens centralizados para:
+
+- Cores;
+- Tipografia;
+- Espaçamento;
+- Bordas;
+- Sombras;
+- Estados de interação;
+- Breakpoints;
+- Animações;
+- Z-index;
+- Densidade de informação;
+- Tema claro;
+- Tema escuro.
+
+A interface deve funcionar bem em:
+
+- Desktop;
+- Tablet;
+- Mobile.
+
+Em telas pequenas, o dashboard deve continuar fácil de usar.
+
+A navegação deve ser reorganizada de forma responsiva, sem simplesmente reduzir tudo de tamanho.
+
+# 20. Direção visual
+
+A marca deve transmitir:
+
+- “Encontrar o sinal em meio ao ruído”;
+- Inteligência;
+- Precisão;
+- Agilidade;
+- Segurança;
+- Controle;
+- Privacidade.
+
+Nome provisório:
+
+SignalWatch
+
+Outras possibilidades:
+
+- SignalFlow;
+- Radar Inbox;
+- Watchly;
+- Sinal;
+- Monitora;
+- PulseDesk;
+- Trilha;
+- AlertHub.
+
+Evitar nomes que remetam diretamente a espionagem, invasão ou vigilância agressiva.
+
+## Paleta do tema claro
+
+```text
+Fundo principal:       #F6F8FB
+Superfície:            #FFFFFF
+Texto principal:       #101828
+Texto secundário:      #667085
+Borda:                 #E4E7EC
+Cor primária:          #126B68
+Cor primária forte:    #0D4F4C
+Destaque positivo:     #1C9A73
+Atenção:               #D99121
+Erro:                  #D64545
+
+## Paleta do tema escuro
+Fundo principal:       #08151A
+Superfície:            #0F2328
+Superfície elevada:    #153139
+Texto principal:       #F3F7F7
+Texto secundário:      #9DB2B4
+Borda:                 #24444A
+Cor primária:          #39C6B2
+Cor primária forte:    #67D9C6
+Destaque positivo:     #48C996
+Atenção:               #F2B84B
+Erro:                  #F27777
+A cor teal deve criar associação com sinal, tecnologia, clareza e segurança, sem copiar visualmente outros mensageiros.
+
+Tipografia
+Utilizar:
+
+Títulos: Manrope, 600 ou 700
+Texto:   Inter, 400, 500 ou 600
+Dados:   Inter, com números destacados
+Os títulos devem ter presença, mas a interface não deve depender de textos gigantes para parecer sofisticada.
+
+Escala de espaçamento
+Utilizar uma escala baseada em múltiplos de 4:
+
+4px   — detalhes mínimos
+8px   — distância entre ícone e texto
+12px  — elementos próximos
+16px  — espaçamento padrão
+24px  — blocos relacionados
+32px  — seções
+48px  — grandes divisões
+64px  — áreas de destaque
+Bordas e superfícies
+Campos:       10px
+Botões:       10px
+Cards:        16px
+Painéis:       20px
+Modal:         20px
+Utilizar sombras suaves e poucas.
+
+A profundidade deve ser criada principalmente através de contraste entre superfícies, bordas e espaçamento.
+
+21. Tom de voz
+Utilizar uma linguagem:
+
+Clara;
+Segura;
+Direta;
+Profissional;
+Brasileira;
+Sem exagero comercial;
+Sem jargões técnicos desnecessários.
+Exemplos de textos:
+
+“Sua conexão está ativa”
+“Nenhum alerta encontrado”
+“Aguardando confirmação do Pix”
+“Essa regra está pausada”
+“Não foi possível entregar esta notificação”
+“Revise a conexão do Telegram para continuar”
+“Seu alerta foi salvo”
+“O monitoramento foi pausado”
+“Nenhum grupo foi selecionado”
+“Sua conta do Telegram precisa ser reconectada”
+22. Arquitetura técnica
+Construir como uma aplicação SaaS multi-tenant.
+
+Preferências:
+
+Frontend em React com Vite;
+Backend em Node.js;
+API REST documentada;
+PostgreSQL;
+ORM com migrations;
+React Query para dados assíncronos;
+Webhooks para eventos;
+WebSocket ou Server-Sent Events para alertas em tempo real;
+Fila para processamento de mensagens;
+Fila para notificações;
+Logs estruturados;
+Variáveis sensíveis somente em secrets;
+Credenciais do conector da conta pessoal, como API ID, API hash ou credenciais do provedor, somente em secrets;
+Sessões de contas pessoais criptografadas e isoladas por organização;
+Conector da conta pessoal do Telegram isolado;
+Conector da Telegram Bot API isolado;
+Camada de pagamento isolada;
+Suporte futuro para múltiplos provedores.
+O frontend nunca deve acessar diretamente:
+
+Banco de dados;
+Tokens;
+Credenciais;
+Sessões;
+Webhooks;
+APIs privadas dos provedores.
+23. Critérios de aceite
+A primeira versão será considerada funcional quando:
+
+O cliente conseguir criar uma conta;
+O cliente conseguir fazer login;
+O cliente conseguir escolher idioma;
+O cliente conseguir escolher tema claro ou escuro;
+O responsável pela plataforma conseguir configurar o bot oficial usando uma credencial protegida;
+O cliente conseguir autorizar a própria conta do Telegram por QR Code;
+O cliente conseguir visualizar o status da sessão autorizada e do bot de notificações;
+O cliente conseguir visualizar os grupos disponíveis para sua conta;
+O cliente conseguir selecionar grupos;
+O cliente conseguir criar regras;
+O cliente conseguir adicionar palavras-chave;
+O cliente conseguir pausar e ativar regras;
+O sistema conseguir identificar mensagens correspondentes;
+O sistema conseguir evitar duplicidade;
+O cliente conseguir receber alertas no site;
+O cliente conseguir iniciar o bot oficial e receber alertas no chat privado do próprio Telegram;
+O cliente conseguir abrir a mensagem original através de um botão ou link quando ela estiver disponível;
+O sistema não enviar mensagens para os grupos;
+O sistema não iniciar conversas automaticamente;
+O sistema não negociar em nome do cliente;
+O sistema não solicitar ao cliente senha, código SMS, código de login da conta pessoal do Telegram ou token do bot na plataforma;
+O cliente conseguir visualizar o histórico de alertas;
+O cliente conseguir visualizar o uso do plano;
+O cliente conseguir pagar via Pix;
+O pagamento ser confirmado através de webhook;
+O sistema bloquear ou limitar recursos conforme o plano;
+O cliente conseguir alterar suas configurações;
+O cliente conseguir excluir seus dados;
+A plataforma apresentar estados de erro e carregamento;
+A plataforma não apresentar como funcionando uma integração que esteja indisponível.
+24. Ordem de implementação do MVP
+Priorizar nesta ordem:
+
+Estrutura visual e identidade do produto;
+Cadastro e login;
+Onboarding;
+Configuração de idioma e tema;
+Estrutura de planos;
+Checkout Pix;
+Confirmação de pagamento via webhook;
+Configuração central do bot oficial pelo responsável da plataforma;
+Autorização da conta pessoal do cliente por QR Code;
+Lista de grupos;
+Regras e palavras-chave;
+Processamento das mensagens;
+Alertas no site;
+Notificações para o chat privado do próprio cliente no Telegram;
+Dashboard;
+Configurações;
+Segurança;
+Auditoria;
+Privacidade;
+Estados de erro;
+Responsividade.
+25. Decisões importantes
+O MVP deve começar com:
+
+Uma organização por conta;
+Um bot oficial central criado e administrado pela empresa responsável;
+Uma sessão isolada da conta pessoal do Telegram por organização;
+A API de cliente do Telegram ou provedor compatível para autorização via QR Code;
+A Telegram Bot API para notificações;
+Um provedor de pagamento;
+Regras simples de palavras-chave;
+Notificações no site;
+Notificações para o próprio cliente;
+Histórico limitado;
+Dashboard enxuto;
+Sistema de auditoria;
+Token do bot central fornecido pelo responsável e armazenado somente em secrets;
+Sessões pessoais criptografadas, isoladas e revogáveis;
+Conector da conta pessoal do Telegram substituível;
+Conector da Telegram Bot API substituível;
+Preços configuráveis;
+Retenção de mensagens configurável.
+O recurso mais delicado é a autorização via QR Code, o armazenamento seguro das sessões pessoais, o vínculo de cada grupo à organização correta, a leitura de mensagens e o envio de notificações pelo bot central.
+
+Antes de comercializar a solução definitivamente, confirmar se a API de cliente do Telegram, o provedor escolhido e a Telegram Bot API permitem:
+
+Configurar o bot oficial criado pela empresa responsável através do token fornecido pelo operador;
+Armazenar o token somente em secrets, sem expô-lo ao cliente ou ao frontend;
+Usar o mesmo bot oficial com isolamento rigoroso entre organizações;
+Autorizar a conta pessoal do cliente via QR Code real e com expiração;
+Armazenar, renovar e revogar a sessão pessoal com segurança;
+Ler mensagens dos grupos acessíveis à conta pessoal autorizada;
+Receber eventos da conta pessoal em tempo real ou por mecanismo estável equivalente;
+Identificar o grupo de origem;
+Processar mensagens de maneira estável;
+Enviar notificações para o chat privado do próprio cliente pelo bot central;
+Gerar links ou botões “Abrir mensagem” que respeitem a privacidade e o acesso ao grupo;
+Operar comercialmente respeitando os limites e as políticas do Telegram;
+Manter o bot e os mecanismos de atualização ativos;
+Detectar sessão expirada, sessão revogada, conta desconectada, token revogado e falhas do bot corretamente;
+Garantir que mensagens, grupos e alertas nunca sejam vinculados à organização errada.
+26. Entrega esperada
+Antes de criar o código, apresente:
+
+Análise de viabilidade da autorização da conta pessoal via QR Code, da API de cliente do Telegram, da Telegram Bot API e do uso de um bot central;
+Arquitetura proposta;
+Modelo de dados;
+Fluxos de usuário;
+Plano de implementação;
+Riscos e limitações;
+Plano inicial de preços;
+Critérios de aceite.
+Depois implemente o MVP funcional.
+
+Não crie funcionalidades falsas.
+
+Não utilize dados fictícios em fluxos críticos.
+
+Não crie botões sem ação.
+
+Não crie uma tela para o cliente inserir token ou criar bot. Não simule uma integração de bot ou grupos.
+
+Você tem liberdade criativa para definir a apresentação visual, disposição dos elementos, componentes, tipografia, animações e transições, desde que mantenha o produto sofisticado, profissional e fácil de utilizar.
+
+A interface deve parecer um produto pelo qual uma empresa pagaria para utilizar todos os dias.
+
+Você é capaz de criar um produto extraordinário. Não faça escolhas genéricas ou medíocres. A primeira impressão precisa transmitir confiança imediatamente.

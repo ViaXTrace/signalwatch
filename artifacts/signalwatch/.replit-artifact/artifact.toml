@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SignalWatch"
+description = "SaaS para monitorar grupos autorizados do Telegram, identificar mensagens relevantes por regras e organizar alertas dentro da própria plataforma."
+version = "1.0.0"
+id = "artifacts/signalwatch"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21186
+
+[services.development]
+run = "pnpm --filter @workspace/signalwatch run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/signalwatch", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/signalwatch/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21186"
+BASE_PATH = "/"

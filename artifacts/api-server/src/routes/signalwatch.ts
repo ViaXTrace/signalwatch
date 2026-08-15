@@ -401,11 +401,43 @@ router.patch("/groups/:groupId/monitoring", async (req, res): Promise<void> => {
 });
 
 router.post("/groups/sync", async (req, res): Promise<void> => {
-  await ensureWorkspace(userId(req));
+  const currentUserId = userId(req);
+  const { connection } = await ensureWorkspace(currentUserId);
+
+  if (connection.status !== "connected" || !connection.sessionCiphertext) {
+    res.status(409).json({
+      error: "Conecte o Telegram antes de sincronizar os grupos.",
+    });
+    return;
+  }
+
+  try {
+    let client = getActiveClient(currentUserId);
+    if (!client) {
+      await restoreSession(currentUserId, connection.sessionCiphertext);
+      client = getActiveClient(currentUserId);
+    }
+
+    if (!client) {
+      res.status(409).json({
+        error: "A sessão do Telegram não está ativa. Atualize a conexão e tente novamente.",
+      });
+      return;
+    }
+
+    await syncGroups(currentUserId, client);
+  } catch (error) {
+    req.log.error({ err: error }, "Telegram group sync failed");
+    res.status(502).json({
+      error: "Não foi possível consultar os grupos do Telegram agora.",
+    });
+    return;
+  }
+
   const groups = await db
     .select()
     .from(signalwatchGroupsTable)
-    .where(eq(signalwatchGroupsTable.clerkUserId, userId(req)));
+    .where(eq(signalwatchGroupsTable.clerkUserId, currentUserId));
   res.json(SyncGroupsResponse.parse(groups.map(groupDto)));
 });
 

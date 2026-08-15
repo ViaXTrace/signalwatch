@@ -99,11 +99,21 @@ function alertDto(alert: typeof signalwatchAlertsTable.$inferSelect) {
 }
 
 function groupDto(group: typeof signalwatchGroupsTable.$inferSelect) {
+  // Older records used the internal "available" state for groups that were
+  // discovered but not monitored. The public API intentionally exposes only
+  // the states understood by the frontend.
+  const status =
+    group.status === "available"
+      ? group.monitored
+        ? "active"
+        : "paused"
+      : group.status;
+
   return {
     id: group.id,
     name: group.name,
     username: group.username,
-    status: group.status,
+    status,
     monitored: group.monitored,
     messageCount: group.messageCount,
     lastEventAt: group.lastEventAt,

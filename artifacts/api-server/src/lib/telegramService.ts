@@ -310,13 +310,17 @@ export async function syncGroups(
         telegramId,
         name,
         username,
-        status: "available",
+        status: "paused",
         monitored: false,
       });
     } else {
       await db
         .update(signalwatchGroupsTable)
-        .set({ name, username, status: "available" })
+        .set({
+          name,
+          username,
+          status: existing.monitored ? "active" : "paused",
+        })
         .where(eq(signalwatchGroupsTable.id, existing.id));
     }
 

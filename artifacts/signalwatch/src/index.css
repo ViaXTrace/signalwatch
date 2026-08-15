@@ -142,7 +142,10 @@
   --app-font-sans: 'Poppins', sans-serif;
   --app-font-serif: 'Poppins', sans-serif;
   --app-font-mono: 'DM Mono', monospace;
-  --radius: 0.75rem;
+  --radius: clamp(0.625rem, 0.5rem + 0.35vw, 0.95rem);
+  --app-page-pad: clamp(1rem, 0.7rem + 1.5vw, 2rem);
+  --app-card-pad: clamp(1rem, 0.86rem + 0.7vw, 1.5rem);
+  --app-section-gap: clamp(1rem, 0.8rem + 1vw, 1.5rem);
 
   --shadow-2xs: 0px 2px 0px 0px rgba(0,0,0,0);
   --shadow-xs: 0px 2px 0px 0px rgba(0,0,0,0);
@@ -178,11 +181,11 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 0 0% 8%;
-  --foreground: 35 12% 91%;
+  --background: 0 0% 7%;
+  --foreground: 35 18% 96%;
   --border: 0 0% 18%;
-  --card: 0 0% 11%;
-  --card-foreground: 35 12% 91%;
+  --card: 0 0% 10%;
+  --card-foreground: 35 18% 96%;
   --card-border: 0 0% 18%;
   --sidebar: 0 0% 5%;
   --sidebar-foreground: 35 12% 88%;
@@ -198,11 +201,11 @@
   --primary: 17 82% 55%;
   --primary-foreground: 0 0% 100%;
   --secondary: 17 20% 18%;
-  --secondary-foreground: 35 12% 91%;
+  --secondary-foreground: 35 18% 96%;
   --muted: 0 0% 14%;
-  --muted-foreground: 33 5% 60%;
+  --muted-foreground: 35 12% 74%;
   --accent: 17 30% 18%;
-  --accent-foreground: 17 82% 65%;
+  --accent-foreground: 22 92% 76%;
   --destructive: 4 72% 58%;
   --destructive-foreground: 0 0% 99%;
   --input: 0 0% 18%;
@@ -226,6 +229,8 @@
 @layer base {
   * { @apply border-border; }
   body { @apply font-sans antialiased bg-background text-foreground; }
+  h1, h2, h3, h4, h5, h6 { @apply text-foreground; }
+  p, span, label, small { text-wrap: pretty; }
 }
 
 @layer utilities {
@@ -245,7 +250,7 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
     z-index: 50;
   }
-  .vx-card { border: 1px solid hsl(var(--card-border)); background: hsl(var(--card)); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+  .vx-card { border: 1px solid hsl(var(--card-border)); background: hsl(var(--card)); color: hsl(var(--card-foreground)); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
   .vx-transition { transition: transform .2s ease, opacity .2s ease, background-color .2s ease, border-color .2s ease; }
   .vx-scan { animation: scan 2.8s ease-in-out infinite; }
   .vx-fade-up { animation: fadeUp .45s ease both; }
@@ -256,7 +261,7 @@
   /* Keep backwards compat for old sw- class names during transition */
   .sw-display { font-family: var(--app-font-serif); letter-spacing: -0.03em; }
   .sw-mono { font-family: var(--app-font-mono); }
-  .sw-card { border: 1px solid hsl(var(--card-border)); background: hsl(var(--card)); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
+  .sw-card { border: 1px solid hsl(var(--card-border)); background: hsl(var(--card)); color: hsl(var(--card-foreground)); box-shadow: 0 8px 24px rgba(0,0,0,.06); }
   .sw-transition { transition: transform .2s ease, opacity .2s ease, background-color .2s ease, border-color .2s ease; }
   .sw-scan { animation: scan 2.8s ease-in-out infinite; }
   .sw-fade-up { animation: fadeUp .45s ease both; }

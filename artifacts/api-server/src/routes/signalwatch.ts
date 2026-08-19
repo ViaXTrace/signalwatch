@@ -232,9 +232,10 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const plan = getBillingPlan(profile.planId);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const activeAlerts = allAlerts.filter((alert) => alert.status !== "archived");
   const summary = {
-    alertsToday: allAlerts.filter((alert) => alert.receivedAt >= today).length,
-    unreadAlerts: allAlerts.filter((alert) => alert.status === "unread").length,
+    alertsToday: activeAlerts.filter((alert) => alert.receivedAt >= today).length,
+    unreadAlerts: activeAlerts.filter((alert) => alert.status === "unread").length,
     activeRules: rules.filter((rule) => rule.active).length,
     monitoredGroups: groups.length,
     connection: connectionDto(connection),
@@ -246,7 +247,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
       keywordsLimit: plan.keywordsLimit,
       historyDays: plan.historyDays,
     },
-    recentAlerts: allAlerts.slice(0, 5).map(alertDto),
+    recentAlerts: activeAlerts.slice(0, 5).map(alertDto),
   };
   res.json(GetDashboardSummaryResponse.parse(summary));
 });

@@ -16,7 +16,7 @@ import QRCode from "qrcode";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
 import { NewMessage, type NewMessageEvent } from "telegram/events";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   db,
   signalwatchConnectionsTable,
@@ -272,27 +272,71 @@ async function matchMessageAgainstRules(
       if (!allRequired) continue;
     }
 
-    await db.insert(signalwatchAlertsTable).values({
-      clerkUserId: userId,
-      groupId: group.id,
-      groupName: group.name,
-      ruleId: rule.id,
-      ruleName: rule.name,
-      message: text.slice(0, 2000),
-      matchedKeywords: matched,
-      receivedAt,
-      status: "unread",
-      deliveryStatus: "internal",
-      messageLink,
-    });
+    // Cooldown: a rule broad enough to match repost/spam bots (identical
+    // promo text sent over and over) would otherwise mint one alert per
+    // repost with no limit. cooldownMinutes was already a rule field the
+    // UI exposed but nothing enforced it — this is what makes it real.
+    if (rule.cooldownMinutes > 0) {
+      const [lastAlert] = await db
+        .select({ receivedAt: signalwatchAlertsTable.receivedAt })
+        .from(signalwatchAlertsTable)
+        .where(
+          and(
+            eq(signalwatchAlertsTable.ruleId, rule.id),
+            eq(signalwatchAlertsTable.groupId, group.id),
+          ),
+        )
+        .orderBy(desc(signalwatchAlertsTable.receivedAt))
+        .limit(1);
+      if (lastAlert) {
+        const elapsedMs = receivedAt.getTime() - lastAlert.receivedAt.getTime();
+        if (elapsedMs < rule.cooldownMinutes * 60_000) continue;
+      }
+    }
+
+    // onConflictDoNothing makes this idempotent on (rule, group, telegram
+    // message): the live listener and the polling fallback both call this
+    // function for the same message whenever they race, and a crash mid
+    // poll batch (this environment's syscalls die under it more often than
+    // not) leaves the group's high-water mark unadvanced, so the next boot
+    // re-scans and re-matches messages already alerted on. Without this,
+    // each of those re-runs mints a fresh duplicate alert.
+    const [inserted] = await db
+      .insert(signalwatchAlertsTable)
+      .values({
+        clerkUserId: userId,
+        groupId: group.id,
+        groupName: group.name,
+        ruleId: rule.id,
+        ruleName: rule.name,
+        message: text.slice(0, 2000),
+        matchedKeywords: matched,
+        telegramMessageId: messageId,
+        receivedAt,
+        status: "unread",
+        deliveryStatus: "internal",
+        messageLink,
+      })
+      .onConflictDoNothing({
+        target: [
+          signalwatchAlertsTable.ruleId,
+          signalwatchAlertsTable.groupId,
+          signalwatchAlertsTable.telegramMessageId,
+        ],
+      })
+      .returning({ id: signalwatchAlertsTable.id });
+    if (!inserted) continue;
 
     // Push real-time notification to any open browser tabs for this user
     sendSSEEvent(userId, { type: "new_alert" });
 
-    // Increment rule match count
+    // Atomic increment — the live listener and the poller can both be
+    // matching messages for this user around the same time, and a
+    // read-then-write of the JS-side `rule.matchedCount` snapshot would
+    // drop increments whenever they land close together.
     await db
       .update(signalwatchRulesTable)
-      .set({ matchedCount: rule.matchedCount + 1 })
+      .set({ matchedCount: sql`${signalwatchRulesTable.matchedCount} + 1` })
       .where(eq(signalwatchRulesTable.id, rule.id));
   }
 }

@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
@@ -67,22 +68,40 @@ export const signalwatchRulesTable = pgTable("signalwatch_rules", {
     .$onUpdate(() => new Date()),
 });
 
-export const signalwatchAlertsTable = pgTable("signalwatch_alerts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  clerkUserId: text("clerk_user_id").notNull(),
-  groupId: text("group_id").notNull(),
-  groupName: text("group_name").notNull(),
-  ruleId: text("rule_id").notNull(),
-  ruleName: text("rule_name").notNull(),
-  message: text("message").notNull(),
-  author: text("author"),
-  matchedKeywords: text("matched_keywords").array().notNull(),
-  receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
-  status: text("status").notNull().default("unread"),
-  favorite: boolean("favorite").notNull().default(false),
-  messageLink: text("message_link"),
-  deliveryStatus: text("delivery_status").notNull().default("internal"),
-});
+export const signalwatchAlertsTable = pgTable(
+  "signalwatch_alerts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clerkUserId: text("clerk_user_id").notNull(),
+    groupId: text("group_id").notNull(),
+    groupName: text("group_name").notNull(),
+    ruleId: text("rule_id").notNull(),
+    ruleName: text("rule_name").notNull(),
+    message: text("message").notNull(),
+    author: text("author"),
+    matchedKeywords: text("matched_keywords").array().notNull(),
+    // The Telegram message id this alert was raised for. Nullable only for
+    // rows created before this column existed — every new alert sets it.
+    // It's the natural dedup key: the live listener and the polling
+    // fallback both call the same matching function for the same message
+    // whenever they race (or whenever a crash forces the poller to
+    // re-scan a batch it already got through), so without this a single
+    // real message can mint one alert per redundant pass.
+    telegramMessageId: integer("telegram_message_id"),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
+    status: text("status").notNull().default("unread"),
+    favorite: boolean("favorite").notNull().default(false),
+    messageLink: text("message_link"),
+    deliveryStatus: text("delivery_status").notNull().default("internal"),
+  },
+  (table) => [
+    uniqueIndex("signalwatch_alerts_dedup_idx").on(
+      table.ruleId,
+      table.groupId,
+      table.telegramMessageId,
+    ),
+  ],
+);
 
 export const signalwatchConnectionsTable = pgTable("signalwatch_connections", {
   id: uuid("id").defaultRandom().primaryKey(),

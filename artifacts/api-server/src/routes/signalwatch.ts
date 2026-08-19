@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { and, desc, eq, gte, ilike, or } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, ne, or, sql } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import { createClerkClient } from "@clerk/express";
 import {
@@ -119,7 +119,14 @@ function groupDto(group: typeof signalwatchGroupsTable.$inferSelect) {
   };
 }
 
-function ruleDto(rule: typeof signalwatchRulesTable.$inferSelect) {
+// `activeAlertCount` overrides the stored, ever-incrementing matchedCount
+// with how many non-archived alerts this rule currently has. Showing the
+// lifetime ledger instead reads as broken the moment someone clears their
+// alerts — the count would never move even though the inbox is empty.
+function ruleDto(
+  rule: typeof signalwatchRulesTable.$inferSelect,
+  activeAlertCount: number,
+) {
   return {
     id: rule.id,
     name: rule.name,
@@ -131,9 +138,28 @@ function ruleDto(rule: typeof signalwatchRulesTable.$inferSelect) {
     active: rule.active,
     priority: rule.priority,
     cooldownMinutes: rule.cooldownMinutes,
-    matchedCount: rule.matchedCount,
+    matchedCount: activeAlertCount,
     createdAt: rule.createdAt,
   };
+}
+
+async function countActiveAlertsByRule(
+  currentUserId: string,
+): Promise<Map<string, number>> {
+  const rows = await db
+    .select({
+      ruleId: signalwatchAlertsTable.ruleId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(signalwatchAlertsTable)
+    .where(
+      and(
+        eq(signalwatchAlertsTable.clerkUserId, currentUserId),
+        ne(signalwatchAlertsTable.status, "archived"),
+      ),
+    )
+    .groupBy(signalwatchAlertsTable.ruleId);
+  return new Map(rows.map((r) => [r.ruleId, r.count]));
 }
 
 function planDto(plan: BillingPlan) {
@@ -427,13 +453,19 @@ router.post("/groups/sync", async (req, res): Promise<void> => {
 });
 
 router.get("/rules", async (req, res): Promise<void> => {
-  await ensureWorkspace(userId(req));
+  const currentUserId = userId(req);
+  await ensureWorkspace(currentUserId);
   const rules = await db
     .select()
     .from(signalwatchRulesTable)
-    .where(eq(signalwatchRulesTable.clerkUserId, userId(req)))
+    .where(eq(signalwatchRulesTable.clerkUserId, currentUserId))
     .orderBy(desc(signalwatchRulesTable.createdAt));
-  res.json(ListRulesResponse.parse(rules.map(ruleDto)));
+  const activeCounts = await countActiveAlertsByRule(currentUserId);
+  res.json(
+    ListRulesResponse.parse(
+      rules.map((rule) => ruleDto(rule, activeCounts.get(rule.id) ?? 0)),
+    ),
+  );
 });
 
 router.post("/rules", async (req, res): Promise<void> => {
@@ -451,7 +483,7 @@ router.post("/rules", async (req, res): Promise<void> => {
       excludedKeywords: body.data.excludedKeywords ?? [],
     })
     .returning();
-  res.status(201).json(CreateRuleResponse.parse(ruleDto(rule)));
+  res.status(201).json(CreateRuleResponse.parse(ruleDto(rule, 0)));
 });
 
 router.patch("/rules/:ruleId", async (req, res): Promise<void> => {
@@ -479,7 +511,10 @@ router.patch("/rules/:ruleId", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Rule not found" });
     return;
   }
-  res.json(UpdateRuleResponse.parse(ruleDto(rule)));
+  const activeCounts = await countActiveAlertsByRule(userId(req));
+  res.json(
+    UpdateRuleResponse.parse(ruleDto(rule, activeCounts.get(rule.id) ?? 0)),
+  );
 });
 
 router.delete("/rules/:ruleId", async (req, res): Promise<void> => {

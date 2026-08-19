@@ -197,13 +197,36 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
           ),
         );
 
-      const group = groups.find(
+      let group = groups.find(
         (g) =>
           g.telegramId === chatId ||
           g.telegramId === `-100${chatId}` ||
           chatId.endsWith(g.telegramId.replace(/^-100/, "")),
       );
-      if (!group) return;
+
+      // Every synced group is monitored — a message from a group we've never
+      // seen before means the user joined/was added to it since the last
+      // sync. Auto-register it instead of dropping the message, so
+      // monitoring stays live without a manual re-sync.
+      if (!group) {
+        const entity = await msg.getChat();
+        if (!entity) return;
+        const name =
+          "title" in entity && entity.title ? entity.title : "Grupo sem nome";
+        const username =
+          "username" in entity ? ((entity as { username?: string }).username ?? null) : null;
+        [group] = await db
+          .insert(signalwatchGroupsTable)
+          .values({
+            clerkUserId: userId,
+            telegramId: chatId,
+            name,
+            username,
+            status: "active",
+            monitored: true,
+          })
+          .returning();
+      }
 
       await db
         .update(signalwatchGroupsTable)
@@ -314,14 +337,16 @@ export async function syncGroups(
     const messageCount = Number((dialog as { message?: { id?: number } }).message?.id ?? 0);
 
     if (!existing) {
+      // Every group the account has access to is monitored — there's no
+      // per-group opt-in step. Rules decide what's noise, not a toggle here.
       await db.insert(signalwatchGroupsTable).values({
         clerkUserId: userId,
         telegramId,
         name,
         username,
         messageCount,
-        status: "paused",
-        monitored: false,
+        status: "active",
+        monitored: true,
       });
     } else {
       await db
@@ -330,7 +355,8 @@ export async function syncGroups(
           name,
           username,
           messageCount: Math.max(existing.messageCount, messageCount),
-          status: existing.monitored ? "active" : "paused",
+          status: "active",
+          monitored: true,
         })
         .where(eq(signalwatchGroupsTable.id, existing.id));
     }

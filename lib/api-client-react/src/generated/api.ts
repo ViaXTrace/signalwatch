@@ -28,7 +28,6 @@ import type {
   BillingStatus,
   CheckoutInput,
   DashboardSummary,
-  GroupMonitoringUpdate,
   HealthStatus,
   KeywordRule,
   ListAlertsParams,
@@ -609,78 +608,6 @@ export function useListGroups<TData = Awaited<ReturnType<typeof listGroups>>, TE
 
 
 
-
-export const getUpdateGroupMonitoringUrl = (groupId: string,) => {
-
-
-
-
-  return `/api/groups/${groupId}/monitoring`
-}
-
-/**
- * @summary Start or pause monitoring for a group
- */
-export const updateGroupMonitoring = async (groupId: string,
-    groupMonitoringUpdate: GroupMonitoringUpdate, options?: Parameters<typeof customFetch>[1]): Promise<TelegramGroup> => {
-
-  return customFetch<TelegramGroup>(getUpdateGroupMonitoringUrl(groupId),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(groupMonitoringUpdate)
-  }
-);}
-
-
-
-
-
-export const getUpdateGroupMonitoringMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGroupMonitoring>>, TError,{groupId: string;data: BodyType<GroupMonitoringUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateGroupMonitoring>>, TError,{groupId: string;data: BodyType<GroupMonitoringUpdate>}, TContext> => {
-
-const mutationKey = ['updateGroupMonitoring'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGroupMonitoring>>, {groupId: string;data: BodyType<GroupMonitoringUpdate>}> = (props) => {
-          const {groupId,data} = props ?? {};
-
-          return  updateGroupMonitoring(groupId,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateGroupMonitoringMutationResult = NonNullable<Awaited<ReturnType<typeof updateGroupMonitoring>>>
-    export type UpdateGroupMonitoringMutationBody = BodyType<GroupMonitoringUpdate>
-    export type UpdateGroupMonitoringMutationError = ErrorType<unknown>
-
-    /**
- * @summary Start or pause monitoring for a group
- */
-export const useUpdateGroupMonitoring = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGroupMonitoring>>, TError,{groupId: string;data: BodyType<GroupMonitoringUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof updateGroupMonitoring>>,
-        TError,
-        {groupId: string;data: BodyType<GroupMonitoringUpdate>},
-        TContext
-      > => {
-      return useMutation(getUpdateGroupMonitoringMutationOptions(options));
-    }
 
 export const getSyncGroupsUrl = () => {
 

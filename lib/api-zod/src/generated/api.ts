@@ -207,29 +207,6 @@ export const ListGroupsResponse = zod.array(ListGroupsResponseItem)
 
 
 /**
- * @summary Start or pause monitoring for a group
- */
-export const UpdateGroupMonitoringParams = zod.object({
-  "groupId": zod.coerce.string()
-})
-
-export const UpdateGroupMonitoringBody = zod.object({
-  "monitored": zod.boolean()
-})
-
-export const UpdateGroupMonitoringResponse = zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "username": zod.string().nullish(),
-  "status": zod.enum(['active', 'paused', 'unavailable']),
-  "monitored": zod.boolean(),
-  "messageCount": zod.number(),
-  "lastEventAt": zod.coerce.date().nullable(),
-  "appliedRules": zod.number().optional()
-})
-
-
-/**
  * @summary Refresh groups from the authorized Telegram account
  */
 export const SyncGroupsResponseItem = zod.object({

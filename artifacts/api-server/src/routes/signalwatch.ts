@@ -33,9 +33,6 @@ import {
   ReceivePaymentWebhookResponse,
   RefreshConnectionResponse,
   SyncGroupsResponse,
-  UpdateGroupMonitoringBody,
-  UpdateGroupMonitoringParams,
-  UpdateGroupMonitoringResponse,
   UpdatePreferencesBody,
   UpdatePreferencesResponse,
   UpdateRuleParams,
@@ -385,30 +382,6 @@ router.get("/groups", async (req, res): Promise<void> => {
   }
   const groups = await db.select().from(signalwatchGroupsTable).where(and(...conditions));
   res.json(ListGroupsResponse.parse(groups.map(groupDto)));
-});
-
-router.patch("/groups/:groupId/monitoring", async (req, res): Promise<void> => {
-  const params = UpdateGroupMonitoringParams.safeParse(req.params);
-  const body = UpdateGroupMonitoringBody.safeParse(req.body);
-  if (!params.success || !body.success) {
-    res.status(400).json({ error: (params.success ? body.error?.message : params.error?.message) ?? "Validation error" });
-    return;
-  }
-  const [group] = await db
-    .update(signalwatchGroupsTable)
-    .set({ monitored: body.data.monitored, status: body.data.monitored ? "active" : "paused" })
-    .where(
-      and(
-        eq(signalwatchGroupsTable.id, params.data.groupId),
-        eq(signalwatchGroupsTable.clerkUserId, userId(req)),
-      ),
-    )
-    .returning();
-  if (!group) {
-    res.status(404).json({ error: "Group not found" });
-    return;
-  }
-  res.json(UpdateGroupMonitoringResponse.parse(groupDto(group)));
 });
 
 router.post("/groups/sync", async (req, res): Promise<void> => {

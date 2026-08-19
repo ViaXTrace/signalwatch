@@ -72,6 +72,15 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // In production, Replit's router combines the frontend and API server
+    // under one external domain by path prefix (see artifact.toml). Locally
+    // there's no such router, so proxy /api to the API server directly.
+    proxy: {
+      '/api': {
+        target: process.env.API_PROXY_TARGET ?? 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,

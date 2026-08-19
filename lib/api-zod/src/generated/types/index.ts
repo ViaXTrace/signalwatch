@@ -18,7 +18,6 @@ export * from './billingStatusState';
 export * from './checkoutInput';
 export * from './checkoutInputCycle';
 export * from './dashboardSummary';
-export * from './groupMonitoringUpdate';
 export * from './healthStatus';
 export * from './keywordRule';
 export * from './keywordRuleMatchType';

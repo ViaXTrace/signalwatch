@@ -128,10 +128,6 @@ export interface TelegramGroup {
   appliedRules?: number;
 }
 
-export interface GroupMonitoringUpdate {
-  monitored: boolean;
-}
-
 export type KeywordRuleMatchType = typeof KeywordRuleMatchType[keyof typeof KeywordRuleMatchType];
 
 

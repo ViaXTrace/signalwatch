@@ -181,26 +181,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TelegramGroup"
-  /groups/{groupId}/monitoring:
-    patch:
-      operationId: updateGroupMonitoring
-      tags: [groups]
-      summary: Start or pause monitoring for a group
-      parameters:
-        - $ref: "#/components/parameters/GroupId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GroupMonitoringUpdate"
-      responses:
-        "200":
-          description: Updated group
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TelegramGroup"
   /groups/sync:
     post:
       operationId: syncGroups
@@ -422,12 +402,6 @@ components:
       required: true
       schema:
         type: string
-    GroupId:
-      name: groupId
-      in: path
-      required: true
-      schema:
-        type: string
     RuleId:
       name: ruleId
       in: path
@@ -537,12 +511,6 @@ components:
           format: date-time
         appliedRules:
           type: number
-    GroupMonitoringUpdate:
-      type: object
-      required: [monitored]
-      properties:
-        monitored:
-          type: boolean
     KeywordRule:
       type: object
       required: [id, name, keywords, groupIds, matchType, active, priority, cooldownMinutes, matchedCount]

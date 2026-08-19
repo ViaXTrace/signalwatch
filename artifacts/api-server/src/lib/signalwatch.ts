@@ -7,6 +7,7 @@ import {
   type SignalwatchConnection,
   type SignalwatchProfile,
 } from "@workspace/db";
+import { API_ID, API_HASH } from "./telegramService";
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 const ADMIN_EMAILS = (process.env.SIGNALWATCH_ADMIN_EMAILS ?? "")
@@ -93,7 +94,7 @@ export function getBillingPlan(planId: string): BillingPlan {
 }
 
 export function telegramConnectorAvailable(): boolean {
-  return Boolean(process.env.TELEGRAM_API_ID && process.env.TELEGRAM_API_HASH);
+  return Boolean(API_ID && API_HASH);
 }
 
 export async function ensureWorkspace(userId: string): Promise<{

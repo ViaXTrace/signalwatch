@@ -25,8 +25,11 @@ import {
   signalwatchAlertsTable,
 } from "@workspace/db";
 
-const API_ID = parseInt(process.env.TELEGRAM_API_ID ?? "0", 10);
-const API_HASH = process.env.TELEGRAM_API_HASH ?? "";
+// TEMPORARY (dev-only): hardcoded fallback so the connector works without
+// env secrets configured. Env vars still take precedence when set. Remove
+// before shipping to production — these values are committed to a public repo.
+export const API_ID = parseInt(process.env.TELEGRAM_API_ID ?? "35802846", 10);
+export const API_HASH = process.env.TELEGRAM_API_HASH ?? "d06678e2bd2db3ea8ce3a7ce94232845";
 
 // ── In-memory state ────────────────────────────────────────────────────────────
 interface PendingQR {

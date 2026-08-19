@@ -5,7 +5,7 @@ import {
   Clock3, Copy, CreditCard, ExternalLink, Eye, EyeOff, FileText, Filter, Gauge,
   Globe2, Inbox, KeyRound, Laptop, Layers3, Link2, LockKeyhole, LogOut, MapPin, Menu,
   MessageSquare, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, Plus, QrCode, RefreshCw,
-  Search, Send, Settings2, ShieldCheck, SlidersHorizontal, Smartphone, Sparkles, Star,
+  Search, Send, Settings2, ShieldCheck, SlidersHorizontal, Smartphone, Sparkles,
   Sun, Tag, Trash2, Unplug, Upload, UserCircle2, UsersRound, X, Zap,
 } from 'lucide-react';
 import {
@@ -250,7 +250,7 @@ function NotificationPanel({ alerts, unreadCount, onClose }: { alerts: Alert[]; 
   return (
     <div
       ref={panelRef}
-      className="absolute right-0 top-full z-50 mt-2 w-[340px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card shadow-xl"
+      className="fixed inset-x-4 top-[80px] z-50 rounded-2xl border border-border bg-card shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-[340px]"
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
@@ -321,6 +321,7 @@ function AppShell({ children }: { children: ReactNode }) {
   const summaryQuery = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey(), staleTime: 30_000 } });
   const unreadCount = summaryQuery.data?.unreadAlerts ?? 0;
   const recentAlerts = summaryQuery.data?.recentAlerts ?? [];
+  const telegramConnected = summaryQuery.data?.connection.status === 'connected';
 
   // ── Global real-time alert SSE ──────────────────────────────────────────────
   // Keeps a persistent EventSource alive for the entire AppShell lifetime so
@@ -352,7 +353,14 @@ function AppShell({ children }: { children: ReactNode }) {
           // open page (alerts list, header bell, sidebar badge) refreshes.
           qcGlobal.invalidateQueries({ queryKey: getListAlertsQueryKey() });
           qcGlobal.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          reconnectDelay.current = 2000; // reset backoff on successful event
+        }
+        if (data.type === 'group_activity') {
+          // Server-throttled signal that some group's message count /
+          // lastEventAt changed — refresh the Grupos list live.
+          qcGlobal.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+        }
+        if (data.type !== 'ping') {
+          reconnectDelay.current = 2000; // reset backoff on any real event
         }
       };
 
@@ -423,7 +431,7 @@ function AppShell({ children }: { children: ReactNode }) {
             >
               <item.icon size={17} strokeWidth={1.8} />
               <span>{item.label}</span>
-              {item.label === 'Conexão' && <span className="ml-auto h-2 w-2 rounded-full bg-primary" />}
+              {item.label === 'Conexão' && <span className={`ml-auto h-2 w-2 rounded-full ${telegramConnected ? 'bg-primary' : 'bg-muted-foreground/40'}`} />}
             </Link>
           ))}
         </nav>
@@ -469,7 +477,7 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-2.5">
             <Link href="/app/connection" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent sm:flex" data-testid="link-header-connection">
-              <span className="h-2 w-2 rounded-full bg-primary" /> Telegram não conectado
+              <span className={`h-2 w-2 rounded-full ${telegramConnected ? 'bg-primary' : 'bg-muted-foreground/40'}`} /> {telegramConnected ? 'Telegram conectado' : 'Telegram não conectado'}
             </Link>
             {/* Bell — opens notification panel */}
             <div className="relative">
@@ -477,7 +485,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 className="relative rounded-lg p-2.5 text-muted-foreground hover:bg-accent"
                 aria-label="Notificações"
                 data-testid="button-notifications"
-                onClick={() => setNotifOpen(o => !o)}
+                onClick={() => { setNotifOpen(o => !o); summaryQuery.refetch(); }}
               >
                 <Bell size={18} />
                 {unreadCount > 0 && <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-destructive" />}
@@ -515,7 +523,19 @@ function Metric({ label, value, note, icon: Icon, tone = 'teal' }: { label: stri
   return <div className="sw-card rounded-2xl p-5"><div className="flex items-start justify-between"><div className="text-xs font-bold uppercase tracking-[.09em] text-muted-foreground">{label}</div><div className={`grid h-9 w-9 place-items-center rounded-xl ${iconColor[tone]}`}><Icon size={17} /></div></div><div className="mt-5 sw-display text-4xl font-bold tracking-[-.05em] text-foreground">{value}</div><div className="mt-1 text-xs font-medium text-muted-foreground">{note}</div></div>;
 }
 
-function AlertRow({ alert, onRead, onFavorite, onArchive }: { alert: Alert; onRead?: () => void; onFavorite?: () => void; onArchive?: () => void }) {
+function AlertRow({ alert, onRead, onRemove }: { alert: Alert; onRead?: () => void; onRemove?: () => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
   return (
     <article
       className={`sw-transition group relative rounded-xl border p-4 ${alert.status === 'unread' ? 'border-primary/30 bg-card' : 'border-border bg-card'}`}
@@ -551,15 +571,32 @@ function AlertRow({ alert, onRead, onFavorite, onArchive }: { alert: Alert; onRe
           )}
         </div>
         <div className="flex shrink-0 items-start gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
-          <button onClick={onFavorite} className={`rounded-md p-2 hover:bg-accent ${alert.favorite ? 'text-primary-text' : 'text-muted-foreground'}`} aria-label="Favoritar alerta" data-testid={`button-favorite-${alert.id}`}>
-            <Star size={16} fill={alert.favorite ? 'currentColor' : 'none'} />
-          </button>
           <button onClick={onRead} className="rounded-md p-2 text-muted-foreground hover:bg-accent" aria-label={alert.status === 'unread' ? 'Marcar como lido' : 'Marcar como não lido'} data-testid={`button-read-${alert.id}`}>
             {alert.status === 'unread' ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
-          <button onClick={onArchive} className="rounded-md p-2 text-muted-foreground hover:bg-accent" aria-label="Arquivar alerta" data-testid={`button-archive-${alert.id}`}>
-            <MoreHorizontal size={16} />
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button onClick={() => setMenuOpen(o => !o)} className="rounded-md p-2 text-muted-foreground hover:bg-accent" aria-label="Mais opções" data-testid={`button-more-${alert.id}`}>
+              <MoreHorizontal size={16} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(alert.message); setMenuOpen(false); toast({ title: 'Mensagem copiada.' }); }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-foreground hover:bg-accent"
+                  data-testid={`button-copy-${alert.id}`}
+                >
+                  <Copy size={14} /> Copiar mensagem
+                </button>
+                <button
+                  onClick={() => { onRemove?.(); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-destructive hover:bg-destructive/10"
+                  data-testid={`button-remove-${alert.id}`}
+                >
+                  <Trash2 size={14} /> Remover alerta
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </article>
@@ -594,19 +631,27 @@ function AlertsPage() {
   const params = useMemo(() => ({ search: search || undefined, period, status: 'all' as const, limit: 50 }), [search, period]);
   const query = useListAlerts(params, { query: { queryKey: getListAlertsQueryKey(params) } });
   const connectionQuery = useGetConnectionStatus({ query: { queryKey: getGetConnectionStatusQueryKey(), staleTime: 15_000 } });
-  const alerts = query.data ?? [];
+  // Archived alerts are "removed" from the inbox — they stay in the DB but
+  // never show up here again.
+  const alerts = (query.data ?? []).filter(a => a.status !== 'archived');
   const connectionLabel = connectionQuery.isLoading
     ? 'Telegram: verificando'
     : connectionQuery.data?.status === 'connected'
       ? 'Telegram conectado: sim'
       : 'Telegram conectado: não';
   const qc = useQueryClient();
-  const mark = useMarkAlertRead(); const fav = useFavoriteAlert(); const archive = useArchiveAlert();
+  const mark = useMarkAlertRead(); const archive = useArchiveAlert();
   const invalidate = () => qc.invalidateQueries({ queryKey: getListAlertsQueryKey(params) });
   function action<TData extends object, TError = unknown>(mut: UseMutationResult<Alert, TError, { alertId: string; data: TData }, unknown>, id: string, data: TData, success: string) {
     mut.mutate({ alertId: id, data }, { onSuccess: () => { invalidate(); toast({ title: success }); }, onError: () => toast({ title: 'Ação não concluída', description: 'Tente novamente em instantes.', variant: 'destructive' }) });
   }
-  return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Oportunidades filtradas das conversas que você não tem tempo de acompanhar." action={<Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-ring placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold ${period === item ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-foreground">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status !== 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onFavorite={() => action(fav, a.id, { favorite: !a.favorite }, a.favorite ? 'Removido dos favoritos.' : 'Adicionado aos favoritos.')} onArchive={() => action(archive, a.id, { archived: true }, 'Alerta arquivado.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
+  const clearAll = () => {
+    if (!alerts.length || !window.confirm(`Remover ${alerts.length} ${alerts.length === 1 ? 'alerta' : 'alertas'} desta lista?`)) return;
+    Promise.all(alerts.map(a => archive.mutateAsync({ alertId: a.id, data: { archived: true } })))
+      .then(() => { invalidate(); toast({ title: 'Alertas removidos.' }); })
+      .catch(() => toast({ title: 'Não foi possível remover todos os alertas.', description: 'Tente novamente em instantes.', variant: 'destructive' }));
+  };
+  return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Oportunidades filtradas das conversas que você não tem tempo de acompanhar." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={clearAll} disabled={!alerts.length || archive.isPending} data-testid="button-clear-alerts"><Trash2 size={15} /> Limpar mensagens</Button><Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button></div>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-ring placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold ${period === item ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-foreground">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status === 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onRemove={() => action(archive, a.id, { archived: true }, 'Alerta removido.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
 }
 
 type RuleForm = { name: string; keywords: string; requiredKeywords: string; excludedKeywords: string; matchType: 'partial' | 'exact' | 'regex'; active: boolean; priority: number; cooldownMinutes: number };
@@ -642,7 +687,7 @@ function GroupsPage() {
   const activeCount = groups.filter(g => g.monitored).length;
   const totalMessages = groups.reduce((sum, g) => sum + (g.messageCount ?? 0), 0);
   const syncNow = () => sync.mutate(undefined, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListGroupsQueryKey() }); toast({ title: 'Grupos atualizados.' }); }, onError: error => toast({ title: 'Não foi possível sincronizar grupos.', description: error instanceof Error ? error.message : 'Conecte o Telegram e tente novamente.', variant: 'destructive' }) });
-  return <><PageHeader eyebrow="Território monitorado" title="Grupos" description="Todo grupo e canal autorizado é monitorado automaticamente — use as regras para decidir o que vira sinal." action={<Button variant="secondary" onClick={syncNow} disabled={sync.isPending} data-testid="button-sync-groups"><RefreshCw size={15} className={sync.isPending ? 'animate-spin' : ''} /> Sincronizar grupos</Button>} /><div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"><div className="relative min-w-0"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar grupo ou @username" className="form-input pl-9" data-testid="input-search-groups" /></div><div className="grid grid-cols-3 gap-2 text-center sm:flex sm:text-left"><Pill tone="teal">{activeCount} monitorados</Pill><Pill tone="slate">{groups.length} disponíveis</Pill><Pill tone="blue">{totalMessages.toLocaleString('pt-BR')} mensagens</Pill></div></div>{query.isError && !query.data && <ErrorState onRetry={() => query.refetch()} />}{query.isLoading ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-40" />)}</div> : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{filtered.map(g => <div key={g.id} className="sw-card sw-transition flex min-h-[13rem] flex-col rounded-2xl p-4 hover:-translate-y-0.5 sm:p-5" data-testid={`card-group-${g.id}`}><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"><MessageSquare size={18} /></div><div className="min-w-0"><h3 className="line-clamp-2 break-words font-bold leading-snug text-foreground">{g.name}</h3><div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{g.username ? `@${g.username}` : 'grupo sem username'}</div></div></div><div className="shrink-0">{g.status === 'unavailable' ? <Pill tone="amber">Indisponível</Pill> : g.monitored ? <Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Monitorando</Pill> : <Pill tone="slate">Pausado</Pill>}</div></div><div className="mt-auto grid grid-cols-3 gap-2 border-t border-border pt-4 text-xs"><div className="min-w-0"><div className="truncate text-muted-foreground">Mensagens</div><div className="sw-mono mt-1 truncate font-bold text-foreground">{(g.messageCount ?? 0).toLocaleString('pt-BR')}</div></div><div className="min-w-0"><div className="truncate text-muted-foreground">Regras</div><div className="sw-mono mt-1 truncate font-bold text-foreground">{g.appliedRules ?? 0}</div></div><div className="min-w-0"><div className="truncate text-muted-foreground">Último sinal</div><div className="mt-1 truncate font-semibold text-foreground">{relativeDate(g.lastEventAt)}</div></div></div></div>)}</div>}{!filtered.length && <EmptyState icon={UsersRound} title="Nenhum grupo encontrado" body="Sincronize sua conta autorizada para descobrir novos grupos." />}</>;
+  return <><PageHeader eyebrow="Território monitorado" title="Grupos" description="Todo grupo e canal autorizado é monitorado automaticamente — use as regras para decidir o que vira sinal." action={<Button variant="secondary" onClick={syncNow} disabled={sync.isPending} data-testid="button-sync-groups"><RefreshCw size={15} className={sync.isPending ? 'animate-spin' : ''} /> Sincronizar grupos</Button>} /><div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"><div className="relative min-w-0"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar grupo ou @username" className="form-input pl-9" data-testid="input-search-groups" /></div><div className="flex flex-wrap gap-2"><Pill tone="teal">{activeCount} monitorados</Pill><Pill tone="slate">{groups.length} disponíveis</Pill><Pill tone="blue">{totalMessages.toLocaleString('pt-BR')} mensagens</Pill></div></div>{query.isError && !query.data && <ErrorState onRetry={() => query.refetch()} />}{query.isLoading ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-40" />)}</div> : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{filtered.map(g => <div key={g.id} className="sw-card sw-transition flex min-h-[13rem] flex-col rounded-2xl p-4 hover:-translate-y-0.5 sm:p-5" data-testid={`card-group-${g.id}`}><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"><MessageSquare size={18} /></div><div className="min-w-0"><h3 className="line-clamp-2 break-words font-bold leading-snug text-foreground">{g.name}</h3><div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{g.username ? `@${g.username}` : 'grupo sem username'}</div></div></div><div className="shrink-0">{g.status === 'unavailable' ? <Pill tone="amber">Indisponível</Pill> : g.monitored ? <Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Monitorando</Pill> : <Pill tone="slate">Pausado</Pill>}</div></div><div className="mt-auto grid grid-cols-3 gap-2 border-t border-border pt-4 text-xs"><div className="min-w-0"><div className="truncate text-muted-foreground">Mensagens</div><div className="sw-mono mt-1 truncate font-bold text-foreground">{(g.messageCount ?? 0).toLocaleString('pt-BR')}</div></div><div className="min-w-0"><div className="truncate text-muted-foreground">Regras</div><div className="sw-mono mt-1 truncate font-bold text-foreground">{g.appliedRules ?? 0}</div></div><div className="min-w-0"><div className="truncate text-muted-foreground">Último sinal</div><div className="mt-1 truncate font-semibold text-foreground">{relativeDate(g.lastEventAt)}</div></div></div></div>)}</div>}{!filtered.length && <EmptyState icon={UsersRound} title="Nenhum grupo encontrado" body="Sincronize sua conta autorizada para descobrir novos grupos." />}</>;
 }
 
 function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
@@ -701,6 +746,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
           setQrExpiresAt(null);
           setShow2FA(false);
           qc.invalidateQueries({ queryKey: getGetConnectionStatusQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           toast({ title: '✓ Telegram conectado!', description: data.accountLabel ?? 'Sua sessão está ativa.' });
           es.close();
           sseRef.current = null;
@@ -735,7 +781,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
   });
 
   const doDisconnect = () => disconnect.mutate(undefined, {
-    onSuccess: () => { qc.invalidateQueries({ queryKey: getGetConnectionStatusQueryKey() }); toast({ title: 'Sessão desconectada.' }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: getGetConnectionStatusQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() }); toast({ title: 'Sessão desconectada.' }); },
     onError: () => toast({ title: 'Não foi possível desconectar.', variant: 'destructive' }),
   });
 
@@ -1752,13 +1798,31 @@ function Router() {
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route path="/forgot-password" component={ForgotPasswordPage} />
         <Route path="/onboarding" component={OnboardingPage} />
-        <Route path="/app" component={() => <ProtectedRoute><AppShell><Dashboard /></AppShell></ProtectedRoute>} />
-        <Route path="/app/alerts" component={() => <ProtectedRoute><AppShell><AlertsPage /></AppShell></ProtectedRoute>} />
-        <Route path="/app/rules" component={() => <ProtectedRoute><AppShell><RulesPage /></AppShell></ProtectedRoute>} />
-        <Route path="/app/groups" component={() => <ProtectedRoute><AppShell><GroupsPage /></AppShell></ProtectedRoute>} />
-        <Route path="/app/connection" component={() => <ProtectedRoute><AppShell><ConnectionPage /></AppShell></ProtectedRoute>} />
-        <Route path="/app/billing" component={() => <ProtectedRoute><AppShell><BillingPage /></AppShell></ProtectedRoute>} />
-        <Route path="/app/settings" component={() => <ProtectedRoute><AppShell><SettingsPage /></AppShell></ProtectedRoute>} />
+        {/* AppShell (and its persistent alert SSE connection) must mount once
+            for the whole /app/* subtree — nesting it inside each Route below
+            would remount it, and the SSE connection with it, on every
+            in-app navigation. A raw RegExp path matches "/app" and any
+            sub-path WITHOUT wouter's `nest` rebasing — this codebase's Links,
+            setLocation() calls, and Redirects all use absolute "/app/..."
+            paths throughout, and `nest` would prepend the base again onto
+            those (turning "/app/alerts" into "/app/app/alerts"). */}
+        <Route path={/^\/app(\/.*)?$/}>
+          {() => (
+            <ProtectedRoute>
+              <AppShell>
+                <Switch>
+                  <Route path="/app" component={Dashboard} />
+                  <Route path="/app/alerts" component={AlertsPage} />
+                  <Route path="/app/rules" component={RulesPage} />
+                  <Route path="/app/groups" component={GroupsPage} />
+                  <Route path="/app/connection" component={() => <ConnectionPage />} />
+                  <Route path="/app/billing" component={BillingPage} />
+                  <Route path="/app/settings" component={SettingsPage} />
+                </Switch>
+              </AppShell>
+            </ProtectedRoute>
+          )}
+        </Route>
         <Route path="/terms" component={() => <LegalPage />} />
         <Route path="/privacy" component={() => <LegalPage privacy />} />
         <Route component={HomeRoute} />

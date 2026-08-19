@@ -69,6 +69,22 @@ function sendSSEEvent(userId: string, event: Record<string, unknown>): void {
   }
 }
 
+// Group message counters update on every incoming message, which for
+// high-traffic channels can be many times a second — pushing an SSE event
+// per message would flood the connection. Throttle to at most one
+// "group_activity" push per user per window; the frontend just refetches
+// the group list on it, so coalescing bursts into one event is correct.
+const GROUP_ACTIVITY_THROTTLE_MS = 3000;
+const lastGroupActivitySSE = new Map<string, number>();
+
+function notifyGroupActivity(userId: string): void {
+  const now = Date.now();
+  const last = lastGroupActivitySSE.get(userId) ?? 0;
+  if (now - last < GROUP_ACTIVITY_THROTTLE_MS) return;
+  lastGroupActivitySSE.set(userId, now);
+  sendSSEEvent(userId, { type: "group_activity" });
+}
+
 // ── 2FA pending resolvers ──────────────────────────────────────────────────────
 const pending2FA = new Map<string, (password: string) => void>();
 
@@ -235,6 +251,7 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
           lastEventAt: new Date(),
         })
         .where(eq(signalwatchGroupsTable.id, group.id));
+      notifyGroupActivity(userId);
 
       if (!text) return;
 
@@ -250,6 +267,13 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
         );
 
       const lower = text.toLowerCase();
+
+      // Deep link to the exact message — public groups/channels use the
+      // username form, private ones use the internal-id "/c/" form (the
+      // stored telegramId is already the raw internal id, no "-100" prefix).
+      const messageLink = group.username
+        ? `https://t.me/${group.username}/${msg.id}`
+        : `https://t.me/c/${group.telegramId.replace(/^-100/, "")}/${msg.id}`;
 
       for (const rule of rules) {
         if (rule.groupIds.length > 0 && !rule.groupIds.includes(group.id))
@@ -284,6 +308,7 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
           receivedAt: new Date(),
           status: "unread",
           deliveryStatus: "internal",
+          messageLink,
         });
 
         // Push real-time notification to any open browser tabs for this user
@@ -298,7 +323,11 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
     } catch (err) {
       console.error("[telegram] message handler error:", err);
     }
-  }, new NewMessage({ incoming: true }));
+    // No `incoming: true` filter here on purpose: the monitored account is
+    // the same account used to browse/post in these groups, so restricting
+    // to incoming-only silently drops the user's own messages — including
+    // anything they type themselves to test a rule.
+  }, new NewMessage({}));
 }
 
 // ── Group sync ─────────────────────────────────────────────────────────────────

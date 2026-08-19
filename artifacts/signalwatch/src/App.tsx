@@ -436,7 +436,7 @@ function AppShell({ children }: { children: ReactNode }) {
             >
               <item.icon size={17} strokeWidth={1.8} />
               <span>{item.label}</span>
-              {item.label === 'Conexão' && <span className={`ml-auto h-2 w-2 rounded-full ${telegramConnected ? 'bg-primary' : 'bg-muted-foreground/40'}`} />}
+              {item.label === 'Conexão' && !telegramConnected && <span className="ml-auto h-2 w-2 rounded-full bg-destructive" aria-label="Telegram não conectado" />}
             </Link>
           ))}
         </nav>
@@ -482,7 +482,7 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-2.5">
             <Link href="/app/connection" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent sm:flex" data-testid="link-header-connection">
-              <span className={`h-2 w-2 rounded-full ${telegramConnected ? 'bg-primary' : 'bg-muted-foreground/40'}`} /> {telegramConnected ? 'Telegram conectado' : 'Telegram não conectado'}
+              {!telegramConnected && <span className="h-2 w-2 rounded-full bg-destructive" />} {telegramConnected ? 'Telegram conectado' : 'Telegram não conectado'}
             </Link>
             {/* Bell — opens notification panel */}
             <div className="relative">
@@ -554,7 +554,7 @@ function AlertRow({ alert, onRead, onRemove }: { alert: Alert; onRead?: () => vo
             <span className="text-[11px] text-muted-foreground">· {relativeDate(alert.receivedAt)}</span>
             {alert.deliveryStatus === 'unavailable' && <Pill tone="amber">Entrega indisponível</Pill>}
           </div>
-          <p className="mt-2 text-sm leading-6 text-foreground">{alert.message}</p>
+          <p className="mt-2 break-words text-sm leading-6 text-foreground">{alert.message}</p>
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {alert.matchedKeywords.map(k => (
               <span key={k} className="rounded-md bg-accent px-2 py-1 font-mono text-[10px] font-medium text-accent-foreground">#{k}</span>
@@ -584,17 +584,18 @@ function AlertRow({ alert, onRead, onRemove }: { alert: Alert; onRead?: () => vo
               <MoreHorizontal size={16} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-48 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
                 <button
                   onClick={() => { navigator.clipboard?.writeText(alert.message); setMenuOpen(false); toast({ title: 'Mensagem copiada.' }); }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-foreground hover:bg-accent"
+                  className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left text-xs font-semibold text-foreground transition-colors hover:bg-accent"
                   data-testid={`button-copy-${alert.id}`}
                 >
-                  <Copy size={14} /> Copiar mensagem
+                  <Copy size={14} className="text-muted-foreground" /> Copiar mensagem
                 </button>
+                <div className="h-px bg-border" />
                 <button
                   onClick={() => { onRemove?.(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-destructive hover:bg-destructive/10"
+                  className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
                   data-testid={`button-remove-${alert.id}`}
                 >
                   <Trash2 size={14} /> Remover alerta
@@ -622,7 +623,7 @@ function Dashboard() {
 
 function DashboardContent({ summary }: { summary: DashboardSummary }) {
   return <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Alertas hoje" value={summary.alertsToday} note={`${summary.unreadAlerts} ainda não lidos`} icon={Inbox} /><Metric label="Regras ativas" value={summary.activeRules} note="cobrindo seus temas" icon={Zap} tone="amber" /><Metric label="Grupos monitorados" value={summary.monitoredGroups} note={`${summary.connection.availableGroups} disponíveis`} icon={Layers3} tone="blue" /><Metric label="Conexão" value={summary.connection.status === 'connected' ? 'Ativa' : 'Pendente'} note={summary.connection.connectorAvailable ? 'Telegram autorizado' : 'conector indisponível'} icon={Activity} tone={summary.connection.status === 'connected' ? 'teal' : 'amber'} /></div>
-    <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_.7fr]"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Sinais recentes</h2><p className="mt-1 text-xs text-muted-foreground">O que cruzou suas regras nas últimas horas.</p></div><Link href="/app/alerts" className="text-xs font-bold text-primary-text hover:underline" data-testid="link-recent-alerts">Ver todos</Link></div><div className="mt-5 space-y-2">{summary.recentAlerts.length ? summary.recentAlerts.slice(0, 4).map(a => <AlertRow key={a.id} alert={a} />) : <EmptyState icon={Inbox} title="Nenhum sinal ainda" body="Quando uma mensagem cruzar suas regras, ela aparecerá neste espaço." />}</div></section><aside className="space-y-6"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Uso do plano</h2><p className="mt-1 text-xs text-muted-foreground">{summary.planUsage.planName}</p></div><Link href="/app/billing" className="text-xs font-bold text-primary-text hover:underline" data-testid="link-usage-billing">Detalhes</Link></div><UsageBar label="Grupos" used={summary.planUsage.groupsUsed} limit={summary.planUsage.groupsLimit} /><UsageBar label="Palavras-chave" used={summary.planUsage.keywordsUsed} limit={summary.planUsage.keywordsLimit} /></section><section className="rounded-2xl bg-accent p-5 lg:p-6"><div className="flex items-center gap-2 text-accent-foreground"><CircleDot size={16} className="sw-scan" /><span className="text-xs font-bold uppercase tracking-[.15em]">Próximo passo</span></div><h3 className="sw-display mt-4 text-xl font-bold leading-tight text-foreground">{summary.connection.connectorAvailable ? 'Revise os alertas de maior intenção.' : 'Conecte seu Telegram para começar.'}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{summary.connection.connectorAvailable ? 'Comece pelos sinais não lidos e ajuste uma regra se o ruído aumentou.' : 'A integração está aguardando disponibilidade do conector. Você poderá autorizar sua conta sem compartilhar sua senha.'}</p><Link href={summary.connection.connectorAvailable ? '/app/alerts' : '/app/connection'} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-accent-foreground hover:gap-3" data-testid="link-next-step">{summary.connection.connectorAvailable ? 'Ir para inbox' : 'Ver conexão'} <ArrowRight size={15} /></Link></section></aside></div></>;
+    <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_.7fr]"><section className="sw-card min-w-0 rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Sinais recentes</h2><p className="mt-1 text-xs text-muted-foreground">O que cruzou suas regras nas últimas horas.</p></div><Link href="/app/alerts" className="text-xs font-bold text-primary-text hover:underline" data-testid="link-recent-alerts">Ver todos</Link></div><div className="mt-5 space-y-2">{summary.recentAlerts.length ? summary.recentAlerts.slice(0, 4).map(a => <AlertRow key={a.id} alert={a} />) : <EmptyState icon={Inbox} title="Nenhum sinal ainda" body="Quando uma mensagem cruzar suas regras, ela aparecerá neste espaço." />}</div></section><aside className="space-y-6"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Uso do plano</h2><p className="mt-1 text-xs text-muted-foreground">{summary.planUsage.planName}</p></div><Link href="/app/billing" className="text-xs font-bold text-primary-text hover:underline" data-testid="link-usage-billing">Detalhes</Link></div><UsageBar label="Grupos" used={summary.planUsage.groupsUsed} limit={summary.planUsage.groupsLimit} /><UsageBar label="Palavras-chave" used={summary.planUsage.keywordsUsed} limit={summary.planUsage.keywordsLimit} /></section><section className="rounded-2xl bg-accent p-5 lg:p-6"><div className="flex items-center gap-2 text-accent-foreground"><CircleDot size={16} className="sw-scan" /><span className="text-xs font-bold uppercase tracking-[.15em]">Próximo passo</span></div><h3 className="sw-display mt-4 text-xl font-bold leading-tight text-foreground">{summary.connection.connectorAvailable ? 'Revise os alertas de maior intenção.' : 'Conecte seu Telegram para começar.'}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{summary.connection.connectorAvailable ? 'Comece pelos sinais não lidos e ajuste uma regra se o ruído aumentou.' : 'A integração está aguardando disponibilidade do conector. Você poderá autorizar sua conta sem compartilhar sua senha.'}</p><Link href={summary.connection.connectorAvailable ? '/app/alerts' : '/app/connection'} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-accent-foreground hover:gap-3" data-testid="link-next-step">{summary.connection.connectorAvailable ? 'Ir para inbox' : 'Ver conexão'} <ArrowRight size={15} /></Link></section></aside></div></>;
 }
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {

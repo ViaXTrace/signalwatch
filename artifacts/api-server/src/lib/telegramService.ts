@@ -176,7 +176,6 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
       if (!msg.isGroup && !msg.isChannel) return;
 
       const text = (msg.text ?? (msg as { message?: string }).message ?? "").trim();
-      if (!text) return;
 
       // Resolve chatId — GramJS can return BigInt or object
       const rawId = msg.chatId;
@@ -201,6 +200,16 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
           chatId.endsWith(g.telegramId.replace(/^-100/, "")),
       );
       if (!group) return;
+
+      await db
+        .update(signalwatchGroupsTable)
+        .set({
+          messageCount: group.messageCount + 1,
+          lastEventAt: new Date(),
+        })
+        .where(eq(signalwatchGroupsTable.id, group.id));
+
+      if (!text) return;
 
       // Load active rules
       const rules = await db
@@ -258,15 +267,6 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
           .update(signalwatchRulesTable)
           .set({ matchedCount: rule.matchedCount + 1 })
           .where(eq(signalwatchRulesTable.id, rule.id));
-
-        // Update group last event and increment message count
-        await db
-          .update(signalwatchGroupsTable)
-          .set({
-            lastEventAt: new Date(),
-            messageCount: group.messageCount + 1,
-          })
-          .where(eq(signalwatchGroupsTable.id, group.id));
       }
     } catch (err) {
       console.error("[telegram] message handler error:", err);
@@ -307,12 +307,15 @@ export async function syncGroups(
       )
       .limit(1);
 
+    const messageCount = Number((dialog as { message?: { id?: number } }).message?.id ?? 0);
+
     if (!existing) {
       await db.insert(signalwatchGroupsTable).values({
         clerkUserId: userId,
         telegramId,
         name,
         username,
+        messageCount,
         status: "paused",
         monitored: false,
       });
@@ -322,6 +325,7 @@ export async function syncGroups(
         .set({
           name,
           username,
+          messageCount: Math.max(existing.messageCount, messageCount),
           status: existing.monitored ? "active" : "paused",
         })
         .where(eq(signalwatchGroupsTable.id, existing.id));

@@ -1,5 +1,5 @@
 import React, { type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import {
   Activity, ArrowRight, Bell, Bug, Check, CheckCircle2, ChevronDown, CircleAlert, CircleDot,
   Clock3, Copy, CreditCard, ExternalLink, Eye, EyeOff, FileText, Filter, Gauge,
@@ -22,7 +22,7 @@ import type {
   Alert, BillingPlan, BillingStatus, DashboardSummary, KeywordRule, TelegramConnection,
   TelegramGroup, UserPreference,
 } from '@workspace/api-client-react';
-import { ClerkProvider, Redirect, Show, SignIn, SignUp, useClerk, useSignIn, useUser } from '@clerk/react';
+import { ClerkProvider, Show, SignIn, SignUp, useClerk, useSignIn, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -603,7 +603,9 @@ function AlertsPage() {
   const qc = useQueryClient();
   const mark = useMarkAlertRead(); const fav = useFavoriteAlert(); const archive = useArchiveAlert();
   const invalidate = () => qc.invalidateQueries({ queryKey: getListAlertsQueryKey(params) });
-  const action = (mut: typeof mark, id: string, data: object, success: string) => mut.mutate({ alertId: id, data } as never, { onSuccess: () => { invalidate(); toast({ title: success }); }, onError: () => toast({ title: 'Ação não concluída', description: 'Tente novamente em instantes.', variant: 'destructive' }) });
+  function action<TData extends object, TError = unknown>(mut: UseMutationResult<Alert, TError, { alertId: string; data: TData }, unknown>, id: string, data: TData, success: string) {
+    mut.mutate({ alertId: id, data }, { onSuccess: () => { invalidate(); toast({ title: success }); }, onError: () => toast({ title: 'Ação não concluída', description: 'Tente novamente em instantes.', variant: 'destructive' }) });
+  }
   return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Oportunidades filtradas das conversas que você não tem tempo de acompanhar." action={<Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-ring placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold ${period === item ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-foreground">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status !== 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onFavorite={() => action(fav, a.id, { favorite: !a.favorite }, a.favorite ? 'Removido dos favoritos.' : 'Adicionado aos favoritos.')} onArchive={() => action(archive, a.id, { archived: true }, 'Alerta arquivado.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
 }
 
@@ -1518,7 +1520,11 @@ function SignInPage() {
 type ForgotStep = 'email' | 'code' | 'done';
 
 function ForgotPasswordPage() {
-  const { signIn, isLoaded } = useSignIn();
+  // Clerk's "future" signals API: signIn is always present (never null) once
+  // this component renders, so no isLoaded guard is needed. Each call
+  // returns { error } instead of throwing, so a thrown error only means the
+  // request itself failed (network, etc).
+  const { signIn } = useSignIn();
   const [step, setStep] = useState<ForgotStep>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -1528,17 +1534,23 @@ function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [, setLocation] = useLocation();
 
+  function clerkErrorMessage(err: unknown, fallback: string): string {
+    const clerkErr = err as { longMessage?: string; message?: string };
+    return clerkErr.longMessage ?? clerkErr.message ?? fallback;
+  }
+
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!isLoaded) return;
     setLoading(true);
     setError('');
     try {
-      await signIn!.create({ strategy: 'reset_password_email_code', identifier: email });
+      const created = await signIn.create({ identifier: email });
+      if (created.error) throw created.error;
+      const sent = await signIn.resetPasswordEmailCode.sendCode();
+      if (sent.error) throw sent.error;
       setStep('code');
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: { message: string }[] };
-      setError(clerkErr.errors?.[0]?.message ?? 'Não foi possível enviar o código. Verifique o email.');
+      setError(clerkErrorMessage(err, 'Não foi possível enviar o código. Verifique o email.'));
     } finally {
       setLoading(false);
     }
@@ -1546,24 +1558,21 @@ function ForgotPasswordPage() {
 
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!isLoaded) return;
     setLoading(true);
     setError('');
     try {
-      const result = await signIn!.attemptFirstFactor({
-        strategy: 'reset_password_email_code',
-        code,
-        password,
-      } as Parameters<typeof signIn.attemptFirstFactor>[0]);
-      if (result.status === 'complete') {
+      const verified = await signIn.resetPasswordEmailCode.verifyCode({ code });
+      if (verified.error) throw verified.error;
+      const submitted = await signIn.resetPasswordEmailCode.submitPassword({ password });
+      if (submitted.error) throw submitted.error;
+      if (signIn.status === 'complete') {
         setStep('done');
         setTimeout(() => setLocation('/sign-in'), 2500);
       } else {
         setError('Não foi possível confirmar. Tente novamente.');
       }
     } catch (err: unknown) {
-      const clerkErr = err as { errors?: { message: string }[] };
-      setError(clerkErr.errors?.[0]?.message ?? 'Código ou senha inválidos.');
+      setError(clerkErrorMessage(err, 'Código ou senha inválidos.'));
     } finally {
       setLoading(false);
     }

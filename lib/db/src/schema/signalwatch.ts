@@ -40,6 +40,10 @@ export const signalwatchGroupsTable = pgTable("signalwatch_groups", {
   messageCount: integer("message_count").notNull().default(0),
   lastEventAt: timestamp("last_event_at", { withTimezone: true }),
   appliedRules: integer("applied_rules").notNull().default(0),
+  // High-water mark for the polling fallback (see pollForNewMessages) — the
+  // Telegram message id of the last message we've already scanned for rule
+  // matches, so each poll only fetches and processes what's new.
+  lastMessageId: integer("last_message_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

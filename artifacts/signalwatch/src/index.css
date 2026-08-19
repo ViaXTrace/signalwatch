@@ -236,6 +236,7 @@
 
 @layer base {
   * { @apply border-border; }
+  html, body { @apply overflow-x-hidden; }
   body { @apply font-sans antialiased bg-background text-foreground; }
   h1, h2, h3, h4, h5, h6 { @apply text-foreground; }
   p, span, label, small { text-wrap: pretty; }

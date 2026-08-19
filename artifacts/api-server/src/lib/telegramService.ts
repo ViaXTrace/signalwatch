@@ -23,6 +23,7 @@ import {
   signalwatchGroupsTable,
   signalwatchRulesTable,
   signalwatchAlertsTable,
+  type SignalwatchGroup,
 } from "@workspace/db";
 
 // TEMPORARY (dev-only): hardcoded fallback so the connector works without
@@ -40,6 +41,34 @@ interface PendingQR {
 
 const pendingQRs = new Map<string, PendingQR>();
 const activeClients = new Map<string, TelegramClient>();
+const pollTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+// GramJS's live update push is the fast path, but it isn't something we can
+// fully rely on — the connection is a long-lived, mostly-idle socket, which
+// is exactly the shape of connection flaky networks/NATs silently drop
+// without either side noticing. Polling on a short interval is the
+// pragmatic backstop: it reuses the same cheap getDialogs() call the manual
+// "Sincronizar" button already made reliable, so monitoring keeps working
+// even on a run where the push channel goes quiet.
+const POLL_INTERVAL_MS = 25_000;
+
+function startPolling(userId: string, client: TelegramClient): void {
+  stopPolling(userId);
+  const timer = setInterval(() => {
+    syncGroups(userId, client).catch((err) =>
+      console.error(`[telegram] poll failed for ${userId}:`, err),
+    );
+  }, POLL_INTERVAL_MS);
+  pollTimers.set(userId, timer);
+}
+
+function stopPolling(userId: string): void {
+  const timer = pollTimers.get(userId);
+  if (timer) {
+    clearInterval(timer);
+    pollTimers.delete(userId);
+  }
+}
 
 // ── SSE clients ────────────────────────────────────────────────────────────────
 interface SSEClient {
@@ -178,6 +207,7 @@ async function onSessionEstablished(
 
   activeClients.set(userId, client);
   attachMessageListener(userId, client);
+  startPolling(userId, client);
   pendingQRs.delete(userId);
   pending2FA.delete(userId);
 
@@ -188,7 +218,89 @@ async function onSessionEstablished(
   syncGroups(userId, client).catch(console.error);
 }
 
-// ── Message listener ───────────────────────────────────────────────────────────
+// Builds the t.me deep link for a message — public groups/channels use the
+// username form, private ones use the internal-id "/c/" form (the stored
+// telegramId is already the raw internal id, no "-100" prefix).
+function buildMessageLink(group: SignalwatchGroup, messageId: number): string {
+  return group.username
+    ? `https://t.me/${group.username}/${messageId}`
+    : `https://t.me/c/${group.telegramId.replace(/^-100/, "")}/${messageId}`;
+}
+
+// Shared by both the live event listener and the polling fallback so the
+// two paths can never drift apart on what counts as a match.
+async function matchMessageAgainstRules(
+  userId: string,
+  group: SignalwatchGroup,
+  text: string,
+  messageId: number,
+  receivedAt: Date,
+): Promise<void> {
+  if (!text) return;
+
+  const rules = await db
+    .select()
+    .from(signalwatchRulesTable)
+    .where(
+      and(
+        eq(signalwatchRulesTable.clerkUserId, userId),
+        eq(signalwatchRulesTable.active, true),
+      ),
+    );
+
+  const lower = text.toLowerCase();
+  const messageLink = buildMessageLink(group, messageId);
+
+  for (const rule of rules) {
+    if (rule.groupIds.length > 0 && !rule.groupIds.includes(group.id))
+      continue;
+
+    const hasExcluded = rule.excludedKeywords.some((kw) =>
+      lower.includes(kw.toLowerCase()),
+    );
+    if (hasExcluded) continue;
+
+    const matched = rule.keywords.filter((kw) =>
+      lower.includes(kw.toLowerCase()),
+    );
+    if (matched.length === 0) continue;
+
+    if (rule.requiredKeywords.length > 0) {
+      const allRequired = rule.requiredKeywords.every((kw) =>
+        lower.includes(kw.toLowerCase()),
+      );
+      if (!allRequired) continue;
+    }
+
+    await db.insert(signalwatchAlertsTable).values({
+      clerkUserId: userId,
+      groupId: group.id,
+      groupName: group.name,
+      ruleId: rule.id,
+      ruleName: rule.name,
+      message: text.slice(0, 2000),
+      matchedKeywords: matched,
+      receivedAt,
+      status: "unread",
+      deliveryStatus: "internal",
+      messageLink,
+    });
+
+    // Push real-time notification to any open browser tabs for this user
+    sendSSEEvent(userId, { type: "new_alert" });
+
+    // Increment rule match count
+    await db
+      .update(signalwatchRulesTable)
+      .set({ matchedCount: rule.matchedCount + 1 })
+      .where(eq(signalwatchRulesTable.id, rule.id));
+  }
+}
+
+// ── Message listener (fast path) ─────────────────────────────────────────────
+// Not fully reliable on its own — see startPolling() — but when the push
+// channel is healthy this delivers matches instantly instead of waiting for
+// the next poll tick.
 function attachMessageListener(userId: string, client: TelegramClient): void {
   client.addEventHandler(async (event: NewMessageEvent) => {
     try {
@@ -240,86 +352,24 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
             username,
             status: "active",
             monitored: true,
+            lastMessageId: msg.id,
           })
           .returning();
       }
 
+      // The poller picks up from lastMessageId, so keep it moving even when
+      // the live path is the one that actually saw the message.
       await db
         .update(signalwatchGroupsTable)
         .set({
           messageCount: group.messageCount + 1,
           lastEventAt: new Date(),
+          lastMessageId: Math.max(group.lastMessageId ?? 0, msg.id),
         })
         .where(eq(signalwatchGroupsTable.id, group.id));
       notifyGroupActivity(userId);
 
-      if (!text) return;
-
-      // Load active rules
-      const rules = await db
-        .select()
-        .from(signalwatchRulesTable)
-        .where(
-          and(
-            eq(signalwatchRulesTable.clerkUserId, userId),
-            eq(signalwatchRulesTable.active, true),
-          ),
-        );
-
-      const lower = text.toLowerCase();
-
-      // Deep link to the exact message — public groups/channels use the
-      // username form, private ones use the internal-id "/c/" form (the
-      // stored telegramId is already the raw internal id, no "-100" prefix).
-      const messageLink = group.username
-        ? `https://t.me/${group.username}/${msg.id}`
-        : `https://t.me/c/${group.telegramId.replace(/^-100/, "")}/${msg.id}`;
-
-      for (const rule of rules) {
-        if (rule.groupIds.length > 0 && !rule.groupIds.includes(group.id))
-          continue;
-
-        const hasExcluded = rule.excludedKeywords.some((kw) =>
-          lower.includes(kw.toLowerCase()),
-        );
-        if (hasExcluded) continue;
-
-        const matched = rule.keywords.filter((kw) =>
-          lower.includes(kw.toLowerCase()),
-        );
-        if (matched.length === 0) continue;
-
-        if (rule.requiredKeywords.length > 0) {
-          const allRequired = rule.requiredKeywords.every((kw) =>
-            lower.includes(kw.toLowerCase()),
-          );
-          if (!allRequired) continue;
-        }
-
-        // Create alert
-        await db.insert(signalwatchAlertsTable).values({
-          clerkUserId: userId,
-          groupId: group.id,
-          groupName: group.name,
-          ruleId: rule.id,
-          ruleName: rule.name,
-          message: text.slice(0, 2000),
-          matchedKeywords: matched,
-          receivedAt: new Date(),
-          status: "unread",
-          deliveryStatus: "internal",
-          messageLink,
-        });
-
-        // Push real-time notification to any open browser tabs for this user
-        sendSSEEvent(userId, { type: "new_alert" });
-
-        // Increment rule match count
-        await db
-          .update(signalwatchRulesTable)
-          .set({ matchedCount: rule.matchedCount + 1 })
-          .where(eq(signalwatchRulesTable.id, rule.id));
-      }
+      await matchMessageAgainstRules(userId, group, text, msg.id, new Date());
     } catch (err) {
       console.error("[telegram] message handler error:", err);
     }
@@ -331,6 +381,40 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
 }
 
 // ── Group sync ─────────────────────────────────────────────────────────────────
+// Fetches and matches whatever's new in one group since `sinceMessageId`
+// against active rules, then advances the group's high-water mark. Used
+// both by the periodic poller and (implicitly, via its baseline) by the
+// live listener catching up after a gap.
+async function processNewMessagesForGroup(
+  userId: string,
+  group: SignalwatchGroup,
+  client: TelegramClient,
+  entity: Parameters<TelegramClient["getMessages"]>[0],
+  sinceMessageId: number,
+): Promise<void> {
+  const messages = await client.getMessages(entity, {
+    minId: sinceMessageId,
+    limit: 100,
+    reverse: true,
+  });
+  if (messages.length === 0) return;
+
+  let highestId = sinceMessageId;
+  for (const msg of messages) {
+    if (msg.id > highestId) highestId = msg.id;
+    const text = (msg.text ?? (msg as { message?: string }).message ?? "").trim();
+    if (!text) continue;
+    const receivedAt = msg.date ? new Date(msg.date * 1000) : new Date();
+    await matchMessageAgainstRules(userId, group, text, msg.id, receivedAt);
+  }
+
+  await db
+    .update(signalwatchGroupsTable)
+    .set({ lastMessageId: highestId, lastEventAt: new Date() })
+    .where(eq(signalwatchGroupsTable.id, group.id));
+  notifyGroupActivity(userId);
+}
+
 export async function syncGroups(
   userId: string,
   client: TelegramClient,
@@ -363,31 +447,63 @@ export async function syncGroups(
       )
       .limit(1);
 
-    const messageCount = Number((dialog as { message?: { id?: number } }).message?.id ?? 0);
+    const latestMessageId = Number((dialog as { message?: { id?: number } }).message?.id ?? 0);
 
+    let group: SignalwatchGroup;
     if (!existing) {
       // Every group the account has access to is monitored — there's no
       // per-group opt-in step. Rules decide what's noise, not a toggle here.
-      await db.insert(signalwatchGroupsTable).values({
-        clerkUserId: userId,
-        telegramId,
-        name,
-        username,
-        messageCount,
-        status: "active",
-        monitored: true,
-      });
+      // Baseline lastMessageId to the current latest so we don't backfill
+      // (and alert on) the group's entire history the moment it's found.
+      [group] = await db
+        .insert(signalwatchGroupsTable)
+        .values({
+          clerkUserId: userId,
+          telegramId,
+          name,
+          username,
+          messageCount: latestMessageId,
+          lastMessageId: latestMessageId,
+          status: "active",
+          monitored: true,
+        })
+        .returning();
     } else {
-      await db
+      [group] = await db
         .update(signalwatchGroupsTable)
         .set({
           name,
           username,
-          messageCount: Math.max(existing.messageCount, messageCount),
+          messageCount: Math.max(existing.messageCount, latestMessageId),
           status: "active",
           monitored: true,
         })
-        .where(eq(signalwatchGroupsTable.id, existing.id));
+        .where(eq(signalwatchGroupsTable.id, existing.id))
+        .returning();
+
+      // Rows created before lastMessageId existed start null — baseline
+      // them the same way as a brand-new group instead of backfilling.
+      if (existing.lastMessageId === null) {
+        await db
+          .update(signalwatchGroupsTable)
+          .set({ lastMessageId: latestMessageId })
+          .where(eq(signalwatchGroupsTable.id, group.id));
+      } else if (latestMessageId > existing.lastMessageId) {
+        try {
+          await processNewMessagesForGroup(
+            userId,
+            group,
+            client,
+            entity,
+            existing.lastMessageId,
+          );
+        } catch (err) {
+          console.error(
+            `[telegram] failed to process new messages for group ${group.id}:`,
+            err,
+          );
+        }
+      }
     }
 
     count++;
@@ -550,6 +666,7 @@ export async function restoreSession(
 
     activeClients.set(userId, client);
     attachMessageListener(userId, client);
+    startPolling(userId, client);
     console.info(`[telegram] session restored for user ${userId}`);
   } catch (err) {
     console.error(`[telegram] restoreSession failed for ${userId}:`, err);
@@ -558,6 +675,7 @@ export async function restoreSession(
 
 // ── Disconnect ─────────────────────────────────────────────────────────────────
 export async function disconnectClient(userId: string): Promise<void> {
+  stopPolling(userId);
   const client = activeClients.get(userId);
   if (client) {
     try {

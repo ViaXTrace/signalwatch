@@ -603,7 +603,7 @@ components:
             type: string
         groupIds:
           type: array
-          minItems: 1
+          description: Empty array means the rule applies to all monitored groups.
           items:
             type: string
         matchType:

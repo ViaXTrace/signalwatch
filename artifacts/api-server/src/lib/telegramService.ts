@@ -259,10 +259,13 @@ function attachMessageListener(userId: string, client: TelegramClient): void {
           .set({ matchedCount: rule.matchedCount + 1 })
           .where(eq(signalwatchRulesTable.id, rule.id));
 
-        // Update group last event
+        // Update group last event and increment message count
         await db
           .update(signalwatchGroupsTable)
-          .set({ lastEventAt: new Date() })
+          .set({
+            lastEventAt: new Date(),
+            messageCount: group.messageCount + 1,
+          })
           .where(eq(signalwatchGroupsTable.id, group.id));
       }
     } catch (err) {

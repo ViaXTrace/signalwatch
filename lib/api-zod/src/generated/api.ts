@@ -270,7 +270,6 @@ export const ListRulesResponse = zod.array(ListRulesResponseItem)
  */
 
 
-
 export const createRuleBodyPriorityMin = 0;
 export const createRuleBodyPriorityMax = 100;
 
@@ -284,7 +283,7 @@ export const CreateRuleBody = zod.object({
   "keywords": zod.array(zod.string()).min(1),
   "requiredKeywords": zod.array(zod.string()).optional(),
   "excludedKeywords": zod.array(zod.string()).optional(),
-  "groupIds": zod.array(zod.string()).min(1),
+  "groupIds": zod.array(zod.string()).describe('Empty array means the rule applies to all monitored groups.'),
   "matchType": zod.enum(['partial', 'exact', 'regex']),
   "active": zod.boolean(),
   "priority": zod.number().min(createRuleBodyPriorityMin).max(createRuleBodyPriorityMax),
@@ -316,7 +315,6 @@ export const UpdateRuleParams = zod.object({
 
 
 
-
 export const updateRuleBodyPriorityMin = 0;
 export const updateRuleBodyPriorityMax = 100;
 
@@ -330,7 +328,7 @@ export const UpdateRuleBody = zod.object({
   "keywords": zod.array(zod.string()).min(1),
   "requiredKeywords": zod.array(zod.string()).optional(),
   "excludedKeywords": zod.array(zod.string()).optional(),
-  "groupIds": zod.array(zod.string()).min(1),
+  "groupIds": zod.array(zod.string()).describe('Empty array means the rule applies to all monitored groups.'),
   "matchType": zod.enum(['partial', 'exact', 'regex']),
   "active": zod.boolean(),
   "priority": zod.number().min(updateRuleBodyPriorityMin).max(updateRuleBodyPriorityMax),

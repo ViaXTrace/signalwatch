@@ -70,9 +70,13 @@ autoInstallPeers: false
 
 onlyBuiltDependencies:
   - '@swc/core'
+  - '@clerk/shared'
+  - bufferutil
+  - es5-ext
   - esbuild
   - msw
   - unrs-resolver
+  - utf-8-validate
 
 overrides:
   # replit uses linux-x64 only, we can exclude all other platforms
@@ -158,3 +162,10 @@ overrides:
   # drizzle-kit uses esbuild internally on an older version that's vulnerable, this overrides it
   "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0"
   esbuild: "0.27.3"
+
+allowBuilds:
+  '@clerk/shared': true
+  bufferutil: true
+  es5-ext: true
+  esbuild: true
+  utf-8-validate: true

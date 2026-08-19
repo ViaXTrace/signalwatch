@@ -103,14 +103,16 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: '#e8531a',
-    colorForeground: '#0f0f0f',
-    colorMutedForeground: '#6b6560',
-    colorDanger: '#de765f',
-    colorBackground: '#f4f3ef',
-    colorInput: '#ffffff',
-    colorInputForeground: '#0f0f0f',
-    colorNeutral: '#e0dcd5',
+    // CSS custom-property references (not static hex) so the Clerk-hosted
+    // card follows the app's light/dark theme instead of staying light-only.
+    colorPrimary: 'hsl(var(--primary))',
+    colorForeground: 'hsl(var(--foreground))',
+    colorMutedForeground: 'hsl(var(--muted-foreground))',
+    colorDanger: 'hsl(var(--destructive))',
+    colorBackground: 'hsl(var(--card))',
+    colorInput: 'hsl(var(--card))',
+    colorInputForeground: 'hsl(var(--foreground))',
+    colorNeutral: 'hsl(var(--border))',
     fontFamily: 'Manrope, sans-serif',
     borderRadius: '0.75rem',
   },
@@ -123,21 +125,21 @@ const clerkAppearance = {
     headerSubtitle: 'text-muted-foreground',
     socialButtonsBlockButtonText: 'text-foreground font-semibold',
     formFieldLabel: 'text-foreground font-semibold text-sm',
-    footerActionLink: 'text-[#e8531a] font-bold',
+    footerActionLink: 'text-primary-text font-bold',
     footerActionText: 'text-muted-foreground',
-    dividerText: 'text-[#b0aba5] font-bold text-[11px] uppercase tracking-wider',
-    identityPreviewEditButton: 'text-[#e8531a]',
-    formFieldSuccessText: 'text-[#e8531a]',
+    dividerText: 'text-muted-foreground font-bold text-[11px] uppercase tracking-wider',
+    identityPreviewEditButton: 'text-primary-text',
+    formFieldSuccessText: 'text-primary-text',
     alertText: 'text-foreground',
     logoBox: 'mb-2',
     logoImage: 'h-12 w-12',
     socialButtonsBlockButton: 'border border-border bg-card hover:bg-accent/40',
     badge: '!hidden',
-    formButtonPrimary: 'bg-[#e8531a] hover:bg-[#d44517] text-white font-bold',
-    formFieldInput: 'border-border bg-card text-foreground focus:border-[#e8531a]',
+    formButtonPrimary: 'bg-primary hover:bg-primary/90 text-primary-foreground font-bold',
+    formFieldInput: 'border-border bg-card text-foreground focus:border-primary',
     footerAction: 'bg-muted',
     dividerLine: 'bg-border',
-    alert: 'bg-[#fff8f6] border-[#de765f]',
+    alert: 'bg-destructive/10 border-destructive/50',
     otpCodeFieldInput: 'border-border',
     formFieldRow: 'gap-3',
     main: 'gap-5',
@@ -185,7 +187,7 @@ function Logo() {
       </svg>
       {/* Wordmark — inherits text color from parent (sidebar-foreground or foreground) */}
       <div className="flex flex-col leading-none">
-        <span className="text-[11px] font-bold uppercase tracking-[.22em] text-[#e8531a]">ViaX</span>
+        <span className="text-[11px] font-bold uppercase tracking-[.22em] text-primary-text">ViaX</span>
         <span className="text-base font-bold tracking-[-0.02em]">Trace</span>
       </div>
     </div>
@@ -193,19 +195,30 @@ function Logo() {
 }
 
 function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
-  const styles = { primary: 'bg-[#e8531a] text-[#fff8f4] hover:bg-[#d44517] shadow-[0_7px_18px_rgba(232,83,26,.18)]', secondary: 'border border-border bg-card text-[#c43e12] hover:bg-accent', ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground', danger: 'border border-[#ecc5be] bg-[#fff8f6] text-[#a84032] hover:bg-[#ffebe7]' };
+  const styles = {
+    primary: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_7px_18px_rgba(232,83,26,.18)]',
+    secondary: 'border border-border bg-card text-foreground hover:bg-accent',
+    ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',
+    danger: 'border border-destructive bg-destructive/10 text-destructive hover:bg-destructive/20',
+  };
   return <button className={`sw-transition inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${styles[variant]} ${className}`} {...props}>{children}</button>;
 }
 function Pill({ children, tone = 'teal' }: { children: ReactNode; tone?: 'teal' | 'amber' | 'red' | 'slate' | 'blue' }) {
-  const colors = { teal: 'bg-[#fde8d4] text-[#d44517]', amber: 'bg-[#fee8da] text-[#c43e12]', red: 'bg-[#ffe5da] text-[#a94335]', slate: 'bg-[#e5eeeb] text-muted-foreground', blue: 'bg-[#dceff3] text-muted-foreground' };
+  const colors = {
+    teal: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    slate: 'bg-muted text-muted-foreground',
+    blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  };
   return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${colors[tone]}`}>{children}</span>;
 }
-function Skeleton({ className = '' }: { className?: string }) { return <div className={`animate-pulse rounded-lg bg-[#dcebe7] ${className}`} />; }
+function Skeleton({ className = '' }: { className?: string }) { return <div className={`animate-pulse rounded-lg bg-muted ${className}`} />; }
 function EmptyState({ icon: Icon, title, body, action }: { icon: typeof Inbox; title: string; body: string; action?: ReactNode }) {
-  return <div className="sw-card flex flex-col items-center justify-center rounded-2xl px-6 py-16 text-center"><div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[#fee8da] text-[#d44517]"><Icon size={22} /></div><h3 className="sw-display text-xl font-bold text-foreground">{title}</h3><p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{body}</p>{action && <div className="mt-5">{action}</div>}</div>;
+  return <div className="sw-card flex flex-col items-center justify-center rounded-2xl px-6 py-16 text-center"><div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-accent text-accent-foreground"><Icon size={22} /></div><h3 className="sw-display text-xl font-bold text-foreground">{title}</h3><p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{body}</p>{action && <div className="mt-5">{action}</div>}</div>;
 }
 function ErrorState({ onRetry, label = 'Não foi possível carregar estes dados.' }: { onRetry?: () => void; label?: string }) {
-  return <div className="rounded-xl border border-[#eac7bf] bg-[#fff7f4] p-4 text-sm text-[#954b3e]"><div className="flex items-center gap-2 font-semibold"><CircleAlert size={17} /> {label}</div>{onRetry && <button onClick={onRetry} className="mt-2 font-bold underline" data-testid="button-retry">Tentar novamente</button>}</div>;
+  return <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"><div className="flex items-center gap-2 font-semibold"><CircleAlert size={17} /> {label}</div>{onRetry && <button onClick={onRetry} className="mt-2 font-bold underline" data-testid="button-retry">Tentar novamente</button>}</div>;
 }
 
 const navItems = [
@@ -243,7 +256,7 @@ function NotificationPanel({ alerts, unreadCount, onClose }: { alerts: Alert[]; 
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-foreground">Notificações</span>
           {unreadCount > 0 && (
-            <span className="rounded-full bg-[#e8531a] px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-extrabold text-primary-foreground">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -266,13 +279,13 @@ function NotificationPanel({ alerts, unreadCount, onClose }: { alerts: Alert[]; 
           recent.map(alert => (
             <div
               key={alert.id}
-              className={`border-b border-border px-4 py-3 last:border-0 ${alert.status === 'unread' ? 'bg-[#fff8f6] dark:bg-card' : ''}`}
+              className={`border-b border-border px-4 py-3 last:border-0 ${alert.status === 'unread' ? 'bg-accent/30' : ''}`}
             >
               <div className="flex items-start gap-2.5">
-                <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${alert.status === 'unread' ? 'bg-[#e8531a]' : 'bg-transparent'}`} />
+                <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${alert.status === 'unread' ? 'bg-primary' : 'bg-transparent'}`} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate text-[11px] font-bold text-[#d44517]">{alert.groupName}</span>
+                    <span className="truncate text-[11px] font-bold text-foreground">{alert.groupName}</span>
                     <span className="shrink-0 text-[10px] text-muted-foreground">· {relativeDate(alert.receivedAt)}</span>
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-foreground">{alert.message}</p>
@@ -285,7 +298,7 @@ function NotificationPanel({ alerts, unreadCount, onClose }: { alerts: Alert[]; 
       <div className="border-t border-border px-4 py-3">
         <button
           onClick={() => { setLocation('/app/alerts'); onClose(); }}
-          className="w-full rounded-lg bg-[#e8531a] py-2 text-xs font-bold text-white hover:bg-[#d44517]"
+          className="w-full rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90"
         >
           Ver todos os alertas
         </button>
@@ -391,7 +404,7 @@ function AppShell({ children }: { children: ReactNode }) {
               <item.icon size={17} strokeWidth={1.8} />
               <span>{item.label}</span>
               {item.label === 'Alertas' && unreadCount > 0 && (
-                <span className="ml-auto rounded-full bg-[#e8531a] px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+                <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-extrabold text-primary-foreground">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -410,14 +423,14 @@ function AppShell({ children }: { children: ReactNode }) {
             >
               <item.icon size={17} strokeWidth={1.8} />
               <span>{item.label}</span>
-              {item.label === 'Conexão' && <span className="ml-auto h-2 w-2 rounded-full bg-[#e8531a]" />}
+              {item.label === 'Conexão' && <span className="ml-auto h-2 w-2 rounded-full bg-primary" />}
             </Link>
           ))}
         </nav>
         <div className="mt-auto rounded-xl border border-sidebar-border bg-sidebar-accent p-3.5">
           <div className="flex items-center justify-between"><span className="text-xs font-bold text-sidebar-foreground">Plano Pulso</span><Pill tone="amber">2 / 5 grupos</Pill></div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-sidebar-border"><div className="h-full w-[42%] rounded-full bg-[#e8531a]" /></div>
-          <Link href="/app/billing" className="mt-3 flex items-center justify-between text-xs font-semibold text-[#e8531a] hover:text-sidebar-foreground" data-testid="link-sidebar-billing">Ver detalhes <ArrowRight size={13} /></Link>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-sidebar-border"><div className="h-full w-[42%] rounded-full bg-primary" /></div>
+          <Link href="/app/billing" className="mt-3 flex items-center justify-between text-xs font-semibold text-primary-text hover:text-sidebar-foreground" data-testid="link-sidebar-billing">Ver detalhes <ArrowRight size={13} /></Link>
         </div>
         <div className="mt-3 flex items-center justify-between border-t border-sidebar-border px-2 pt-3">
           <button
@@ -436,7 +449,7 @@ function AppShell({ children }: { children: ReactNode }) {
         <div className="mt-2 flex items-center gap-3 px-2 pb-1">
           {user?.imageUrl
             ? <img src={user.imageUrl} className="h-8 w-8 rounded-full object-cover" alt="" />
-            : <div className="grid h-8 w-8 place-items-center rounded-full bg-[#e8531a] text-xs font-extrabold text-white">{userInitials}</div>
+            : <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground">{userInitials}</div>
           }
           <div className="min-w-0">
             <div className="truncate text-xs font-bold text-sidebar-foreground">{userName}</div>
@@ -456,7 +469,7 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-2.5">
             <Link href="/app/connection" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent sm:flex" data-testid="link-header-connection">
-              <span className="h-2 w-2 rounded-full bg-[#e8531a]" /> Telegram não conectado
+              <span className="h-2 w-2 rounded-full bg-primary" /> Telegram não conectado
             </Link>
             {/* Bell — opens notification panel */}
             <div className="relative">
@@ -467,7 +480,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 onClick={() => setNotifOpen(o => !o)}
               >
                 <Bell size={18} />
-                {unreadCount > 0 && <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#de765f]" />}
+                {unreadCount > 0 && <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-destructive" />}
               </button>
               {notifOpen && (
                 <NotificationPanel
@@ -479,7 +492,7 @@ function AppShell({ children }: { children: ReactNode }) {
             </div>
             {user?.imageUrl
               ? <img src={user.imageUrl} className="h-8 w-8 rounded-full object-cover" alt="" />
-              : <div className="grid h-8 w-8 place-items-center rounded-full bg-[#e8531a] text-xs font-extrabold text-foreground">{userInitials}</div>
+              : <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground">{userInitials}</div>
             }
           </div>
         </header>
@@ -490,32 +503,36 @@ function AppShell({ children }: { children: ReactNode }) {
 }
 
 function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
-  return <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.17em] text-[#d44517]"><span className="h-1.5 w-1.5 rounded-full bg-[#e8531a]" />{eyebrow}</div><h1 className="sw-display text-[2.15rem] font-bold leading-none tracking-[-.045em] text-foreground lg:text-[2.55rem]">{title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p></div>{action}</div>;
+  return <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.17em] text-primary-text"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{eyebrow}</div><h1 className="sw-display text-[2.15rem] font-bold leading-none tracking-[-.045em] text-foreground lg:text-[2.55rem]">{title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p></div>{action}</div>;
 }
 
 function Metric({ label, value, note, icon: Icon, tone = 'teal' }: { label: string; value: string | number; note: string; icon: typeof Activity; tone?: 'teal' | 'amber' | 'blue' }) {
-  const iconColor = { teal: 'bg-[#fee8da] text-[#d44517]', amber: 'bg-[#fee8da] text-[#c43e12]', blue: 'bg-[#dff2f3] text-muted-foreground' };
+  const iconColor = {
+    teal: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  };
   return <div className="sw-card rounded-2xl p-5"><div className="flex items-start justify-between"><div className="text-xs font-bold uppercase tracking-[.09em] text-muted-foreground">{label}</div><div className={`grid h-9 w-9 place-items-center rounded-xl ${iconColor[tone]}`}><Icon size={17} /></div></div><div className="mt-5 sw-display text-4xl font-bold tracking-[-.05em] text-foreground">{value}</div><div className="mt-1 text-xs font-medium text-muted-foreground">{note}</div></div>;
 }
 
 function AlertRow({ alert, onRead, onFavorite, onArchive }: { alert: Alert; onRead?: () => void; onFavorite?: () => void; onArchive?: () => void }) {
   return (
     <article
-      className={`sw-transition group relative rounded-xl border p-4 ${alert.status === 'unread' ? 'border-[#f0c8b0] bg-card' : 'border-border bg-card'}`}
+      className={`sw-transition group relative rounded-xl border p-4 ${alert.status === 'unread' ? 'border-primary/30 bg-card' : 'border-border bg-card'}`}
       data-testid={`card-alert-${alert.id}`}
     >
       <div className="flex gap-3">
-        <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${alert.status === 'unread' ? 'bg-[#e6b548]' : 'bg-[#e0dcd5]'}`} />
+        <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${alert.status === 'unread' ? 'bg-primary' : 'bg-border'}`} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-extrabold text-[#d44517]">{alert.groupName}</span>
+            <span className="text-xs font-extrabold text-primary-text">{alert.groupName}</span>
             <span className="text-[11px] text-muted-foreground">· {relativeDate(alert.receivedAt)}</span>
             {alert.deliveryStatus === 'unavailable' && <Pill tone="amber">Entrega indisponível</Pill>}
           </div>
           <p className="mt-2 text-sm leading-6 text-foreground">{alert.message}</p>
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {alert.matchedKeywords.map(k => (
-              <span key={k} className="rounded-md bg-[#fee8da] px-2 py-1 font-mono text-[10px] font-medium text-[#d44517]">#{k}</span>
+              <span key={k} className="rounded-md bg-accent px-2 py-1 font-mono text-[10px] font-medium text-accent-foreground">#{k}</span>
             ))}
             <span className="ml-1 text-[11px] text-muted-foreground">regra: {alert.ruleName}</span>
           </div>
@@ -525,7 +542,7 @@ function AlertRow({ alert, onRead, onFavorite, onArchive }: { alert: Alert; onRe
               href={alert.messageLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-accent/50 px-2.5 py-1.5 text-[11px] font-semibold text-[#d44517] hover:bg-accent"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-accent/50 px-2.5 py-1.5 text-[11px] font-semibold text-primary-text hover:bg-accent"
               data-testid={`link-open-telegram-${alert.id}`}
             >
               <ExternalLink size={11} />
@@ -534,13 +551,13 @@ function AlertRow({ alert, onRead, onFavorite, onArchive }: { alert: Alert; onRe
           )}
         </div>
         <div className="flex shrink-0 items-start gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
-          <button onClick={onFavorite} className={`rounded-md p-2 hover:bg-[#fee8da] ${alert.favorite ? 'text-[#c43e12]' : 'text-muted-foreground'}`} aria-label="Favoritar alerta" data-testid={`button-favorite-${alert.id}`}>
+          <button onClick={onFavorite} className={`rounded-md p-2 hover:bg-accent ${alert.favorite ? 'text-primary-text' : 'text-muted-foreground'}`} aria-label="Favoritar alerta" data-testid={`button-favorite-${alert.id}`}>
             <Star size={16} fill={alert.favorite ? 'currentColor' : 'none'} />
           </button>
-          <button onClick={onRead} className="rounded-md p-2 text-muted-foreground hover:bg-[#fee8da]" aria-label={alert.status === 'unread' ? 'Marcar como lido' : 'Marcar como não lido'} data-testid={`button-read-${alert.id}`}>
+          <button onClick={onRead} className="rounded-md p-2 text-muted-foreground hover:bg-accent" aria-label={alert.status === 'unread' ? 'Marcar como lido' : 'Marcar como não lido'} data-testid={`button-read-${alert.id}`}>
             {alert.status === 'unread' ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
-          <button onClick={onArchive} className="rounded-md p-2 text-muted-foreground hover:bg-[#fee8da]" aria-label="Arquivar alerta" data-testid={`button-archive-${alert.id}`}>
+          <button onClick={onArchive} className="rounded-md p-2 text-muted-foreground hover:bg-accent" aria-label="Arquivar alerta" data-testid={`button-archive-${alert.id}`}>
             <MoreHorizontal size={16} />
           </button>
         </div>
@@ -556,19 +573,19 @@ function Dashboard() {
   const firstName = user?.firstName ?? user?.fullName?.split(' ')[0] ?? 'você';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  return <><PageHeader eyebrow="Pulso de hoje" title={`${greeting}, ${firstName}.`} description="Seu radar está de olho. Aqui está o que merece atenção agora." action={<Link href="/app/alerts" className="inline-flex items-center gap-2 rounded-lg bg-[#e8531a] px-4 py-2.5 text-sm font-bold text-[#fff8f4] shadow-[0_7px_18px_rgba(232,83,26,.18)] hover:bg-[#d44517]" data-testid="link-see-all-alerts">Abrir inbox <ArrowRight size={16} /></Link>} />
+  return <><PageHeader eyebrow="Pulso de hoje" title={`${greeting}, ${firstName}.`} description="Seu radar está de olho. Aqui está o que merece atenção agora." action={<Link href="/app/alerts" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_7px_18px_rgba(232,83,26,.18)] hover:bg-primary/90" data-testid="link-see-all-alerts">Abrir inbox <ArrowRight size={16} /></Link>} />
     {summaryQuery.isLoading ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Skeleton className="h-36" /><Skeleton className="h-36" /><Skeleton className="h-36" /><Skeleton className="h-36" /></div> : health || !summaryQuery.data ? <ErrorState onRetry={() => summaryQuery.refetch()} label="O servidor não respondeu. Tente novamente para carregar seu panorama real." /> : <DashboardContent summary={summaryQuery.data} />}
   </>;
 }
 
 function DashboardContent({ summary }: { summary: DashboardSummary }) {
   return <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Alertas hoje" value={summary.alertsToday} note={`${summary.unreadAlerts} ainda não lidos`} icon={Inbox} /><Metric label="Regras ativas" value={summary.activeRules} note="cobrindo seus temas" icon={Zap} tone="amber" /><Metric label="Grupos monitorados" value={summary.monitoredGroups} note={`${summary.connection.availableGroups} disponíveis`} icon={Layers3} tone="blue" /><Metric label="Conexão" value={summary.connection.status === 'connected' ? 'Ativa' : 'Pendente'} note={summary.connection.connectorAvailable ? 'Telegram autorizado' : 'conector indisponível'} icon={Activity} tone={summary.connection.status === 'connected' ? 'teal' : 'amber'} /></div>
-    <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_.7fr]"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Sinais recentes</h2><p className="mt-1 text-xs text-muted-foreground">O que cruzou suas regras nas últimas horas.</p></div><Link href="/app/alerts" className="text-xs font-bold text-[#d44517] hover:underline" data-testid="link-recent-alerts">Ver todos</Link></div><div className="mt-5 space-y-2">{summary.recentAlerts.length ? summary.recentAlerts.slice(0, 4).map(a => <AlertRow key={a.id} alert={a} />) : <EmptyState icon={Inbox} title="Nenhum sinal ainda" body="Quando uma mensagem cruzar suas regras, ela aparecerá neste espaço." />}</div></section><aside className="space-y-6"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Uso do plano</h2><p className="mt-1 text-xs text-muted-foreground">{summary.planUsage.planName}</p></div><Link href="/app/billing" className="text-xs font-bold text-[#d44517] hover:underline" data-testid="link-usage-billing">Detalhes</Link></div><UsageBar label="Grupos" used={summary.planUsage.groupsUsed} limit={summary.planUsage.groupsLimit} /><UsageBar label="Palavras-chave" used={summary.planUsage.keywordsUsed} limit={summary.planUsage.keywordsLimit} /></section><section className="rounded-2xl bg-accent p-5 lg:p-6"><div className="flex items-center gap-2 text-[#d44517]"><CircleDot size={16} className="sw-scan" /><span className="text-xs font-bold uppercase tracking-[.15em]">Próximo passo</span></div><h3 className="sw-display mt-4 text-xl font-bold leading-tight text-foreground">{summary.connection.connectorAvailable ? 'Revise os alertas de maior intenção.' : 'Conecte seu Telegram para começar.'}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{summary.connection.connectorAvailable ? 'Comece pelos sinais não lidos e ajuste uma regra se o ruído aumentou.' : 'A integração está aguardando disponibilidade do conector. Você poderá autorizar sua conta sem compartilhar sua senha.'}</p><Link href={summary.connection.connectorAvailable ? '/app/alerts' : '/app/connection'} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-[#d44517] hover:gap-3" data-testid="link-next-step">{summary.connection.connectorAvailable ? 'Ir para inbox' : 'Ver conexão'} <ArrowRight size={15} /></Link></section></aside></div></>;
+    <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_.7fr]"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Sinais recentes</h2><p className="mt-1 text-xs text-muted-foreground">O que cruzou suas regras nas últimas horas.</p></div><Link href="/app/alerts" className="text-xs font-bold text-primary-text hover:underline" data-testid="link-recent-alerts">Ver todos</Link></div><div className="mt-5 space-y-2">{summary.recentAlerts.length ? summary.recentAlerts.slice(0, 4).map(a => <AlertRow key={a.id} alert={a} />) : <EmptyState icon={Inbox} title="Nenhum sinal ainda" body="Quando uma mensagem cruzar suas regras, ela aparecerá neste espaço." />}</div></section><aside className="space-y-6"><section className="sw-card rounded-2xl p-5 lg:p-6"><div className="flex items-center justify-between"><div><h2 className="sw-display text-xl font-bold text-foreground">Uso do plano</h2><p className="mt-1 text-xs text-muted-foreground">{summary.planUsage.planName}</p></div><Link href="/app/billing" className="text-xs font-bold text-primary-text hover:underline" data-testid="link-usage-billing">Detalhes</Link></div><UsageBar label="Grupos" used={summary.planUsage.groupsUsed} limit={summary.planUsage.groupsLimit} /><UsageBar label="Palavras-chave" used={summary.planUsage.keywordsUsed} limit={summary.planUsage.keywordsLimit} /></section><section className="rounded-2xl bg-accent p-5 lg:p-6"><div className="flex items-center gap-2 text-accent-foreground"><CircleDot size={16} className="sw-scan" /><span className="text-xs font-bold uppercase tracking-[.15em]">Próximo passo</span></div><h3 className="sw-display mt-4 text-xl font-bold leading-tight text-foreground">{summary.connection.connectorAvailable ? 'Revise os alertas de maior intenção.' : 'Conecte seu Telegram para começar.'}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{summary.connection.connectorAvailable ? 'Comece pelos sinais não lidos e ajuste uma regra se o ruído aumentou.' : 'A integração está aguardando disponibilidade do conector. Você poderá autorizar sua conta sem compartilhar sua senha.'}</p><Link href={summary.connection.connectorAvailable ? '/app/alerts' : '/app/connection'} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-accent-foreground hover:gap-3" data-testid="link-next-step">{summary.connection.connectorAvailable ? 'Ir para inbox' : 'Ver conexão'} <ArrowRight size={15} /></Link></section></aside></div></>;
 }
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
   const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
-  return <div className="mt-5"><div className="flex justify-between text-xs font-semibold text-muted-foreground"><span>{label}</span><span className="sw-mono text-[#252525]">{used} <span className="text-[#b0aba5]">/ {limit}</span></span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#dcebe6]"><div className={`h-full rounded-full ${pct > 80 ? 'bg-[#df9d45]' : 'bg-[#e8531a]'}`} style={{ width: `${pct}%` }} /></div></div>;
+  return <div className="mt-5"><div className="flex justify-between text-xs font-semibold text-muted-foreground"><span>{label}</span><span className="sw-mono text-foreground">{used} <span className="text-muted-foreground">/ {limit}</span></span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div className={`h-full rounded-full ${pct > 80 ? 'bg-amber-500' : 'bg-primary'}`} style={{ width: `${pct}%` }} /></div></div>;
 }
 
 function AlertsPage() {
@@ -587,7 +604,7 @@ function AlertsPage() {
   const mark = useMarkAlertRead(); const fav = useFavoriteAlert(); const archive = useArchiveAlert();
   const invalidate = () => qc.invalidateQueries({ queryKey: getListAlertsQueryKey(params) });
   const action = (mut: typeof mark, id: string, data: object, success: string) => mut.mutate({ alertId: id, data } as never, { onSuccess: () => { invalidate(); toast({ title: success }); }, onError: () => toast({ title: 'Ação não concluída', description: 'Tente novamente em instantes.', variant: 'destructive' }) });
-  return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Oportunidades filtradas das conversas que você não tem tempo de acompanhar." action={<Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-[#78736e] placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold ${period === item ? 'bg-[#fee8da] text-[#1a1a1a]' : 'text-muted-foreground hover:bg-[#e5f2ed]'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-[#252525]">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status !== 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onFavorite={() => action(fav, a.id, { favorite: !a.favorite }, a.favorite ? 'Removido dos favoritos.' : 'Adicionado aos favoritos.')} onArchive={() => action(archive, a.id, { archived: true }, 'Alerta arquivado.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
+  return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Oportunidades filtradas das conversas que você não tem tempo de acompanhar." action={<Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-ring placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold ${period === item ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-foreground">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status !== 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onFavorite={() => action(fav, a.id, { favorite: !a.favorite }, a.favorite ? 'Removido dos favoritos.' : 'Adicionado aos favoritos.')} onArchive={() => action(archive, a.id, { archived: true }, 'Alerta arquivado.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
 }
 
 type RuleForm = { name: string; keywords: string; requiredKeywords: string; excludedKeywords: string; groupIds: string[]; groupScope: 'all' | 'manual'; matchType: 'partial' | 'exact' | 'regex'; active: boolean; priority: number; cooldownMinutes: number };
@@ -597,7 +614,7 @@ function RuleModal({ initial, groups, onClose, onSaved }: { initial?: KeywordRul
   const create = useCreateRule(); const update = useUpdateRule(); const qc = useQueryClient();
   const save = () => { const selectedGroupIds = form.groupScope === 'all' ? [] : form.groupIds; const payload = { name: form.name.trim(), keywords: form.keywords.split(',').map(s => s.trim()).filter(Boolean), requiredKeywords: form.requiredKeywords.split(',').map(s => s.trim()).filter(Boolean), excludedKeywords: form.excludedKeywords.split(',').map(s => s.trim()).filter(Boolean), groupIds: selectedGroupIds, matchType: form.matchType, active: form.active, priority: Number(form.priority), cooldownMinutes: Number(form.cooldownMinutes) }; if (!payload.name || !payload.keywords.length || (form.groupScope === 'manual' && !payload.groupIds.length)) { toast({ title: form.groupScope === 'manual' ? 'Preencha nome, palavras e ao menos um grupo.' : 'Preencha nome e palavras-chave.', variant: 'destructive' }); return; } const options = { onSuccess: () => { qc.invalidateQueries({ queryKey: getListRulesQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() }); toast({ title: initial ? 'Regra atualizada.' : 'Regra criada.', description: 'O radar já pode usar esta configuração.' }); onSaved(); }, onError: () => toast({ title: 'Não foi possível salvar a regra.', variant: 'destructive' }) }; initial ? update.mutate({ ruleId: initial.id, data: payload }, options) : create.mutate({ data: payload }, options); };
   const set = (key: keyof RuleForm, value: string | boolean | string[] | number) => setForm(prev => ({ ...prev, [key]: value }));
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-5"><div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-card p-5 shadow-2xl sm:rounded-2xl sm:p-7"><div className="flex items-start justify-between"><div><div className="text-[11px] font-bold uppercase tracking-[.16em] text-primary">{initial ? 'Editar regra' : 'Nova regra'}</div><h2 className="sw-display mt-1 text-2xl font-bold text-foreground">{initial ? initial.name : 'Dê um nome ao seu sinal'}</h2></div><button className="rounded-lg p-2 text-muted-foreground hover:bg-accent" onClick={onClose} aria-label="Fechar formulário" data-testid="button-close-rule-modal"><X size={18} /></button></div><div className="mt-6 grid gap-4 sm:grid-cols-2"><Field label="Nome da regra"><input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: Expansão no interior" className="form-input" data-testid="input-rule-name" /></Field><Field label="Tipo de correspondência"><select value={form.matchType} onChange={e => set('matchType', e.target.value)} className="form-input" data-testid="select-rule-match-type"><option value="partial">Parcial — encontra variações</option><option value="exact">Exata — termo completo</option><option value="regex">Regex — padrão avançado</option></select></Field><Field label="Palavras-chave" hint="Separe por vírgulas"><input value={form.keywords} onChange={e => set('keywords', e.target.value)} placeholder="licitação, cotação, fornecedor" className="form-input" data-testid="input-rule-keywords" /></Field><Field label="Palavras obrigatórias"><input value={form.requiredKeywords} onChange={e => set('requiredKeywords', e.target.value)} placeholder="opcional" className="form-input" data-testid="input-rule-required" /></Field><Field label="Excluir palavras"><input value={form.excludedKeywords} onChange={e => set('excludedKeywords', e.target.value)} placeholder="curso, vaga" className="form-input" data-testid="input-rule-excluded" /></Field><Field label="Cooldown (minutos)"><input type="number" min="0" value={form.cooldownMinutes} onChange={e => set('cooldownMinutes', Number(e.target.value))} className="form-input" data-testid="input-rule-cooldown" /></Field></div><div className="mt-5"><div className="mb-2 text-xs font-bold text-foreground">Grupos monitorados</div><div className="grid gap-2 sm:grid-cols-2"><label className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${form.groupScope === 'all' ? 'border-primary/40 bg-accent text-foreground' : 'border-border text-foreground hover:bg-muted'}`}><input type="radio" name="rule-group-scope" checked={form.groupScope === 'all'} onChange={() => setForm(prev => ({ ...prev, groupScope: 'all', groupIds: [] }))} className="mt-0.5 accent-primary" data-testid="radio-rule-all-groups" /><span><span className="block font-semibold">Monitorar todos os grupos e canais</span><span className="mt-1 block text-xs font-normal text-muted-foreground">A regra será aplicada a qualquer grupo autorizado.</span></span></label><label className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${form.groupScope === 'manual' ? 'border-primary/40 bg-accent text-foreground' : 'border-border text-foreground hover:bg-muted'}`}><input type="radio" name="rule-group-scope" checked={form.groupScope === 'manual'} onChange={() => set('groupScope', 'manual')} className="mt-0.5 accent-primary" data-testid="radio-rule-manual-groups" /><span><span className="block font-semibold">Selecionar manualmente</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Escolha os grupos que esta regra deve monitorar.</span></span></label></div>{form.groupScope === 'manual' && <div className="mt-3 grid gap-2 sm:grid-cols-2">{groups.length ? groups.filter(g => g.status !== 'unavailable').map(g => <label key={g.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${form.groupIds.includes(g.id) ? 'border-primary/40 bg-accent text-foreground' : 'border-border text-foreground hover:bg-muted'}`}><input type="checkbox" checked={form.groupIds.includes(g.id)} onChange={e => set('groupIds', e.target.checked ? [...form.groupIds, g.id] : form.groupIds.filter(id => id !== g.id))} className="accent-primary" data-testid={`checkbox-rule-group-${g.id}`} /><span className="truncate font-semibold">{g.name}</span></label>) : <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">Nenhum grupo real foi sincronizado ainda. Conecte o Telegram e sincronize os grupos.</p>}</div>}</div><div className="mt-5 flex items-center gap-5"><Field label="Prioridade"><input type="range" min="0" max="100" value={form.priority} onChange={e => set('priority', Number(e.target.value))} className="w-full accent-primary" data-testid="input-rule-priority" /></Field><div className="sw-mono min-w-[2.5rem] text-center text-sm font-bold text-foreground">{form.priority}%</div><label className="ml-auto flex items-center gap-2 text-sm font-semibold text-muted-foreground"><input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} className="accent-primary" data-testid="checkbox-rule-active" /> Ativa agora</label></div><div className="mt-7 flex justify-end gap-2"><Button variant="secondary" onClick={onClose} data-testid="button-cancel-rule">Cancelar</Button><Button onClick={save} disabled={create.isPending || update.isPending} data-testid="button-save-rule">{create.isPending || update.isPending ? 'Salvando…' : initial ? 'Salvar alterações' : 'Criar regra'}</Button></div></div></div>;
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-5"><div className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-card p-5 shadow-2xl sm:rounded-2xl sm:p-7"><div className="flex items-start justify-between"><div><div className="text-[11px] font-bold uppercase tracking-[.16em] text-primary-text">{initial ? 'Editar regra' : 'Nova regra'}</div><h2 className="sw-display mt-1 text-2xl font-bold text-foreground">{initial ? initial.name : 'Dê um nome ao seu sinal'}</h2></div><button className="rounded-lg p-2 text-muted-foreground hover:bg-accent" onClick={onClose} aria-label="Fechar formulário" data-testid="button-close-rule-modal"><X size={18} /></button></div><div className="mt-6 grid gap-4 sm:grid-cols-2"><Field label="Nome da regra"><input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ex: Expansão no interior" className="form-input" data-testid="input-rule-name" /></Field><Field label="Tipo de correspondência"><select value={form.matchType} onChange={e => set('matchType', e.target.value)} className="form-input" data-testid="select-rule-match-type"><option value="partial">Parcial — encontra variações</option><option value="exact">Exata — termo completo</option><option value="regex">Regex — padrão avançado</option></select></Field><Field label="Palavras-chave" hint="Separe por vírgulas"><input value={form.keywords} onChange={e => set('keywords', e.target.value)} placeholder="licitação, cotação, fornecedor" className="form-input" data-testid="input-rule-keywords" /></Field><Field label="Palavras obrigatórias"><input value={form.requiredKeywords} onChange={e => set('requiredKeywords', e.target.value)} placeholder="opcional" className="form-input" data-testid="input-rule-required" /></Field><Field label="Excluir palavras"><input value={form.excludedKeywords} onChange={e => set('excludedKeywords', e.target.value)} placeholder="curso, vaga" className="form-input" data-testid="input-rule-excluded" /></Field><Field label="Cooldown (minutos)"><input type="number" min="0" value={form.cooldownMinutes} onChange={e => set('cooldownMinutes', Number(e.target.value))} className="form-input" data-testid="input-rule-cooldown" /></Field></div><div className="mt-5"><div className="mb-2 text-xs font-bold text-foreground">Grupos monitorados</div><div className="grid gap-2 sm:grid-cols-2"><label className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${form.groupScope === 'all' ? 'border-primary/40 bg-accent text-foreground' : 'border-border text-foreground hover:bg-muted'}`}><input type="radio" name="rule-group-scope" checked={form.groupScope === 'all'} onChange={() => setForm(prev => ({ ...prev, groupScope: 'all', groupIds: [] }))} className="mt-0.5 accent-primary" data-testid="radio-rule-all-groups" /><span><span className="block font-semibold">Monitorar todos os grupos e canais</span><span className="mt-1 block text-xs font-normal text-muted-foreground">A regra será aplicada a qualquer grupo autorizado.</span></span></label><label className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${form.groupScope === 'manual' ? 'border-primary/40 bg-accent text-foreground' : 'border-border text-foreground hover:bg-muted'}`}><input type="radio" name="rule-group-scope" checked={form.groupScope === 'manual'} onChange={() => set('groupScope', 'manual')} className="mt-0.5 accent-primary" data-testid="radio-rule-manual-groups" /><span><span className="block font-semibold">Selecionar manualmente</span><span className="mt-1 block text-xs font-normal text-muted-foreground">Escolha os grupos que esta regra deve monitorar.</span></span></label></div>{form.groupScope === 'manual' && <div className="mt-3 grid gap-2 sm:grid-cols-2">{groups.length ? groups.filter(g => g.status !== 'unavailable').map(g => <label key={g.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-colors ${form.groupIds.includes(g.id) ? 'border-primary/40 bg-accent text-foreground' : 'border-border text-foreground hover:bg-muted'}`}><input type="checkbox" checked={form.groupIds.includes(g.id)} onChange={e => set('groupIds', e.target.checked ? [...form.groupIds, g.id] : form.groupIds.filter(id => id !== g.id))} className="accent-primary" data-testid={`checkbox-rule-group-${g.id}`} /><span className="truncate font-semibold">{g.name}</span></label>) : <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">Nenhum grupo real foi sincronizado ainda. Conecte o Telegram e sincronize os grupos.</p>}</div>}</div><div className="mt-5 flex items-center gap-5"><Field label="Prioridade"><input type="range" min="0" max="100" value={form.priority} onChange={e => set('priority', Number(e.target.value))} className="w-full accent-primary" data-testid="input-rule-priority" /></Field><div className="sw-mono min-w-[2.5rem] text-center text-sm font-bold text-foreground">{form.priority}%</div><label className="ml-auto flex items-center gap-2 text-sm font-semibold text-muted-foreground"><input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} className="accent-primary" data-testid="checkbox-rule-active" /> Ativa agora</label></div><div className="mt-7 flex justify-end gap-2"><Button variant="secondary" onClick={onClose} data-testid="button-cancel-rule">Cancelar</Button><Button onClick={save} disabled={create.isPending || update.isPending} data-testid="button-save-rule">{create.isPending || update.isPending ? 'Salvando…' : initial ? 'Salvar alterações' : 'Criar regra'}</Button></div></div></div>;
 }
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) { return <label className="block text-xs font-bold text-foreground"><span>{label} {hint && <em className="font-normal not-italic text-muted-foreground">· {hint}</em>}</span><div className="mt-1.5">{children}</div></label>; }
 
@@ -616,7 +633,7 @@ function GroupsPage() {
   const filtered = groups.filter(g => `${g.name} ${g.username ?? ''}`.toLowerCase().includes(search.toLowerCase()));
   const syncNow = () => sync.mutate(undefined, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListGroupsQueryKey() }); toast({ title: 'Grupos atualizados.' }); }, onError: error => toast({ title: 'Não foi possível sincronizar grupos.', description: error instanceof Error ? error.message : 'Conecte o Telegram e tente novamente.', variant: 'destructive' }) });
   const toggle = (g: TelegramGroup) => update.mutate({ groupId: g.id, data: { monitored: !g.monitored } }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListGroupsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() }); toast({ title: g.monitored ? 'Monitoramento pausado.' : 'Monitoramento iniciado.' }); }, onError: () => toast({ title: 'Não foi possível alterar o monitoramento.', variant: 'destructive' }) });
-  return <><PageHeader eyebrow="Território monitorado" title="Grupos" description="Escolha onde o radar presta atenção. Grupos pausados continuam disponíveis para reativação." action={<Button variant="secondary" onClick={syncNow} disabled={sync.isPending} data-testid="button-sync-groups"><RefreshCw size={15} className={sync.isPending ? 'animate-spin' : ''} /> Sincronizar grupos</Button>} /><div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="relative max-w-sm flex-1"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar grupo" className="form-input pl-9" data-testid="input-search-groups" /></div><div className="flex gap-2"><Pill tone="teal">{groups.filter(g => g.monitored).length} monitorados</Pill><Pill tone="slate">{groups.length} disponíveis</Pill></div></div>{query.isError && !query.data && <ErrorState onRetry={() => query.refetch()} />}{query.isLoading ? <div className="grid gap-3 md:grid-cols-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36" />)}</div> : <div className="grid gap-3 md:grid-cols-2">{filtered.map(g => <div key={g.id} className="sw-card sw-transition rounded-2xl p-5 hover:-translate-y-0.5" data-testid={`card-group-${g.id}`}><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fee8da] text-[#252525]"><MessageSquare size={18} /></div><div className="min-w-0"><h3 className="truncate font-bold text-[#1a1a1a]">{g.name}</h3><div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{g.username ? `@${g.username}` : 'grupo sem username'}</div></div></div>{g.status === 'unavailable' ? <Pill tone="amber">Indisponível</Pill> : g.monitored ? <Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Monitorando</Pill> : <Pill tone="slate">Pausado</Pill>}</div><div className="mt-5 grid grid-cols-3 border-t border-border pt-4 text-xs"><div><div className="text-muted-foreground">Mensagens</div><div className="sw-mono mt-1 font-bold text-[#252525]">{g.messageCount.toLocaleString('pt-BR')}</div></div><div><div className="text-muted-foreground">Regras</div><div className="sw-mono mt-1 font-bold text-[#252525]">{g.appliedRules ?? 0}</div></div><div><div className="text-muted-foreground">Último sinal</div><div className="mt-1 font-semibold text-[#252525]">{relativeDate(g.lastEventAt)}</div></div></div><button disabled={g.status === 'unavailable'} onClick={() => toggle(g)} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold ${g.monitored ? 'bg-[#e4f4ed] text-[#252525] hover:bg-[#fee8da]' : 'border border-border text-foreground hover:bg-[#eef8f4]'} disabled:opacity-50`} data-testid={`button-toggle-group-${g.id}`}>{g.monitored ? <><Pause size={14} /> Pausar monitoramento</> : <><Play size={14} /> Monitorar grupo</>}</button></div>)}</div>}{!filtered.length && <EmptyState icon={UsersRound} title="Nenhum grupo encontrado" body="Sincronize sua conta autorizada para descobrir novos grupos." />}</>;
+  return <><PageHeader eyebrow="Território monitorado" title="Grupos" description="Escolha onde o radar presta atenção. Grupos pausados continuam disponíveis para reativação." action={<Button variant="secondary" onClick={syncNow} disabled={sync.isPending} data-testid="button-sync-groups"><RefreshCw size={15} className={sync.isPending ? 'animate-spin' : ''} /> Sincronizar grupos</Button>} /><div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="relative max-w-sm flex-1"><Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar grupo" className="form-input pl-9" data-testid="input-search-groups" /></div><div className="flex gap-2"><Pill tone="teal">{groups.filter(g => g.monitored).length} monitorados</Pill><Pill tone="slate">{groups.length} disponíveis</Pill></div></div>{query.isError && !query.data && <ErrorState onRetry={() => query.refetch()} />}{query.isLoading ? <div className="grid gap-3 md:grid-cols-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36" />)}</div> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{filtered.map(g => <div key={g.id} className="sw-card sw-transition rounded-2xl p-5 hover:-translate-y-0.5" data-testid={`card-group-${g.id}`}><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground"><MessageSquare size={18} /></div><div className="min-w-0"><h3 className="truncate font-bold text-foreground">{g.name}</h3><div className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{g.username ? `@${g.username}` : 'grupo sem username'}</div></div></div>{g.status === 'unavailable' ? <Pill tone="amber">Indisponível</Pill> : g.monitored ? <Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> Monitorando</Pill> : <Pill tone="slate">Pausado</Pill>}</div><div className="mt-5 grid grid-cols-3 border-t border-border pt-4 text-xs"><div><div className="text-muted-foreground">Mensagens</div><div className="sw-mono mt-1 font-bold text-foreground">{g.messageCount.toLocaleString('pt-BR')}</div></div><div><div className="text-muted-foreground">Regras</div><div className="sw-mono mt-1 font-bold text-foreground">{g.appliedRules ?? 0}</div></div><div><div className="text-muted-foreground">Último sinal</div><div className="mt-1 font-semibold text-foreground">{relativeDate(g.lastEventAt)}</div></div></div><button disabled={g.status === 'unavailable'} onClick={() => toggle(g)} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold ${g.monitored ? 'bg-accent text-accent-foreground hover:bg-accent/80' : 'border border-border text-foreground hover:bg-muted'} disabled:opacity-50`} data-testid={`button-toggle-group-${g.id}`}>{g.monitored ? <><Pause size={14} /> Pausar monitoramento</> : <><Play size={14} /> Monitorar grupo</>}</button></div>)}</div>}{!filtered.length && <EmptyState icon={UsersRound} title="Nenhum grupo encontrado" body="Sincronize sua conta autorizada para descobrir novos grupos." />}</>;
 }
 
 function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
@@ -753,7 +770,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f0f0f]/60 px-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-card p-7 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fee8da] text-[#9c6e1a]">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
                 <KeyRound size={20} />
               </div>
               <div>
@@ -775,7 +792,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
                 autoFocus
                 data-testid="input-2fa-password"
               />
-              {error2FA && <p className="mt-2 text-xs font-medium text-[#de765f]">{error2FA}</p>}
+              {error2FA && <p className="mt-2 text-xs font-medium text-destructive">{error2FA}</p>}
             </div>
             <div className="mt-5 flex gap-3">
               <button
@@ -786,7 +803,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
               <button
                 onClick={submit2FA}
                 disabled={submitting2FA || !password2FA.trim()}
-                className="flex-1 rounded-lg bg-[#e8531a] py-2.5 text-sm font-bold text-white hover:bg-[#d44517] disabled:opacity-50"
+                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 data-testid="button-submit-2fa"
               >{submitting2FA ? 'Enviando…' : 'Confirmar'}</button>
             </div>
@@ -798,7 +815,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
         {/* Left panel — session state */}
         <section className="sw-card rounded-2xl p-6 lg:p-8">
           <div className="flex items-center gap-3">
-            <div className={`grid h-11 w-11 place-items-center rounded-xl ${unavailable ? 'bg-[#fee8da] text-[#a4751c]' : connection.status === 'connected' ? 'bg-[#fee8da] text-[#e8531a]' : 'bg-accent text-foreground'}`}>
+            <div className={`grid h-11 w-11 place-items-center rounded-xl ${unavailable || connection.status === 'connected' ? 'bg-accent text-accent-foreground' : 'bg-accent text-foreground'}`}>
               <Link2 size={20} />
             </div>
             <div>
@@ -815,9 +832,9 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
           </div>
 
           {unavailable ? (
-            <div className="mt-6 rounded-xl border border-[#fcc4a0] bg-[#fff4ee] p-4">
-              <div className="flex items-center gap-2 font-bold text-[#c43e12]"><CircleAlert size={17} /> Integração temporariamente indisponível</div>
-              <p className="mt-2 text-sm leading-6 text-[#c43e12]">{connection.message ?? 'O conector do Telegram não está disponível. Tente novamente quando o serviço for habilitado.'}</p>
+            <div className="mt-6 rounded-xl border border-primary/30 bg-accent p-4">
+              <div className="flex items-center gap-2 font-bold text-accent-foreground"><CircleAlert size={17} /> Integração temporariamente indisponível</div>
+              <p className="mt-2 text-sm leading-6 text-accent-foreground">{connection.message ?? 'O conector do Telegram não está disponível. Tente novamente quando o serviço for habilitado.'}</p>
             </div>
           ) : connection.status === 'connected' ? (
             <div className="mt-6 space-y-4">
@@ -845,7 +862,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
           ) : (
             <>
               {qrError && (
-                <div className="mt-4 rounded-xl border border-[#fcc4a0] bg-[#fff4ee] p-3 text-sm text-[#c43e12]">
+                <div className="mt-4 rounded-xl border border-primary/30 bg-accent p-3 text-sm text-accent-foreground">
                   <span className="font-bold">Erro: </span>{qrError}
                 </div>
               )}
@@ -899,7 +916,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[['1', 'Solicite', 'Gere uma autorização segura'], ['2', 'Escaneie', 'Use Dispositivos no Telegram'], ['3', 'Escolha', 'Ative os grupos certos']].map(([n, t, b]) => (
                 <div key={n} className="flex gap-3">
-                  <div className="sw-mono grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#fee8da] text-[11px] font-bold text-[#c43e12]">{n}</div>
+                  <div className="sw-mono grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">{n}</div>
                   <div>
                     <div className="text-xs font-bold text-foreground">{t}</div>
                     <div className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{b}</div>
@@ -919,7 +936,7 @@ function BillingPage() {
   const startCheckout = (planId: string) => { setSelected(planId); checkout.mutate({ data: { planId, cycle } }, { onSuccess: result => { qc.invalidateQueries({ queryKey: getGetBillingStatusQueryKey() }); toast({ title: result.status === 'unavailable' ? 'Checkout indisponível.' : 'Checkout Pix criado.', description: result.message ?? 'Acompanhe o status nesta página.' }); }, onError: () => toast({ title: 'Não foi possível iniciar o Pix.', variant: 'destructive' }) }); };
   const current: BillingStatus | undefined = status;
   const checkoutState = current?.checkout;
-  return <><PageHeader eyebrow="Plano da operação" title="Plano e cobrança" description="Mais cobertura para encontrar os sinais que pagam a conta — sem surpresas no cartão." action={<div className="flex items-center rounded-lg border border-border bg-card p-1 text-xs font-bold"><button onClick={() => setCycle('monthly')} className={`rounded-md px-3 py-2 ${cycle === 'monthly' ? 'bg-[#fee8da] text-[#e8531a]' : 'text-muted-foreground'}`} data-testid="button-cycle-monthly">Mensal</button><button onClick={() => setCycle('annual')} className={`rounded-md px-3 py-2 ${cycle === 'annual' ? 'bg-[#fee8da] text-[#e8531a]' : 'text-muted-foreground'}`} data-testid="button-cycle-annual">Anual · 2 meses grátis</button></div>} />{current && <div className="mb-6 rounded-2xl border border-border bg-accent p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><div className="text-[11px] font-bold uppercase tracking-[.13em] text-[#d44517]">Status atual</div><div className="mt-1 sw-display text-xl font-bold text-foreground">{current.plan.name} <span className="font-sans text-sm font-semibold text-muted-foreground">· {current.state === 'awaiting_payment' ? 'pagamento pendente' : current.state === 'paid' || current.state === 'active' ? 'ativo' : current.state}</span></div></div><Pill tone={current.state === 'awaiting_payment' ? 'amber' : 'teal'}>{current.state === 'awaiting_payment' ? 'Aguardando Pix' : 'Em dia'}</Pill></div></div>}{checkoutState && <div className="mb-6 rounded-2xl border border-[#fcc4a0] bg-[#fff4ee] p-5"><div className="flex items-center gap-2 font-bold text-[#c43e12]"><Clock3 size={17} /> Pagamento Pix {checkoutState.status === 'pending' ? 'pendente' : checkoutState.status}</div><p className="mt-1 text-sm leading-6 text-[#c43e12]">{checkoutState.message ?? 'O pagamento ainda não foi confirmado. Não feche esta página até finalizar.'}</p>{checkoutState.status === 'pending' && checkoutState.copyPaste && <div className="mt-4 flex flex-col gap-2 sm:flex-row"><input readOnly value={checkoutState.copyPaste} className="form-input flex-1 bg-card font-mono text-xs" data-testid="input-pix-copy-paste" /><Button variant="secondary" onClick={() => navigator.clipboard?.writeText(checkoutState.copyPaste ?? '')} data-testid="button-copy-pix"><Copy size={15} /> Copiar código</Button></div>}</div>}<div className="grid gap-4 lg:grid-cols-3">{plans.map((plan, idx) => <div key={plan.id} className={`sw-card relative flex flex-col rounded-2xl p-6 ${idx === 1 ? 'border-2 border-[#e8531a] shadow-[0_16px_34px_rgba(232,83,26,.12)]' : ''}`} data-testid={`card-plan-${plan.id}`}>{idx === 1 && <div className="absolute -top-3 left-5 rounded-full bg-[#e8531a] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-foreground">Mais escolhido</div>}<div className="text-[11px] font-bold uppercase tracking-[.15em] text-[#d44517]">{plan.name}</div><h2 className="sw-display mt-2 text-2xl font-bold text-foreground">{plan.description}</h2><div className="mt-5"><span className="sw-display text-4xl font-bold tracking-[-.06em] text-foreground">{money(cycle === 'monthly' ? plan.monthlyPriceCents : Math.round(plan.annualPriceCents / 12))}</span><span className="text-xs text-muted-foreground"> / mês</span></div><div className="mt-5 space-y-3 border-t border-border pt-5 text-sm text-muted-foreground">{(plan.features ?? []).map(feature => <div key={feature} className="flex items-center gap-2"><CheckCircle2 size={15} className="text-[#e8531a]" />{feature}</div>)}</div><Button onClick={() => startCheckout(plan.id)} disabled={checkout.isPending || plan.id === current?.plan.id} variant={idx === 1 ? 'primary' : 'secondary'} className="mt-7 w-full" data-testid={`button-select-plan-${plan.id}`}>{plan.id === current?.plan.id ? 'Plano atual' : selected === plan.id && checkout.isPending ? 'Gerando Pix…' : 'Escolher plano'}</Button></div>)}</div><div className="mt-6 text-center text-xs text-muted-foreground">Pagamento processado por Mercado Pago. O plano só muda após confirmação do webhook.</div></>;
+  return <><PageHeader eyebrow="Plano da operação" title="Plano e cobrança" description="Mais cobertura para encontrar os sinais que pagam a conta — sem surpresas no cartão." action={<div className="flex items-center rounded-lg border border-border bg-card p-1 text-xs font-bold"><button onClick={() => setCycle('monthly')} className={`rounded-md px-3 py-2 ${cycle === 'monthly' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`} data-testid="button-cycle-monthly">Mensal</button><button onClick={() => setCycle('annual')} className={`rounded-md px-3 py-2 ${cycle === 'annual' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`} data-testid="button-cycle-annual">Anual · 2 meses grátis</button></div>} />{current && <div className="mb-6 rounded-2xl border border-border bg-accent p-5"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><div className="text-[11px] font-bold uppercase tracking-[.13em] text-accent-foreground">Status atual</div><div className="mt-1 sw-display text-xl font-bold text-foreground">{current.plan.name} <span className="font-sans text-sm font-semibold text-muted-foreground">· {current.state === 'awaiting_payment' ? 'pagamento pendente' : current.state === 'paid' || current.state === 'active' ? 'ativo' : current.state}</span></div></div><Pill tone={current.state === 'awaiting_payment' ? 'amber' : 'teal'}>{current.state === 'awaiting_payment' ? 'Aguardando Pix' : 'Em dia'}</Pill></div></div>}{checkoutState && <div className="mb-6 rounded-2xl border border-primary/30 bg-accent p-5"><div className="flex items-center gap-2 font-bold text-accent-foreground"><Clock3 size={17} /> Pagamento Pix {checkoutState.status === 'pending' ? 'pendente' : checkoutState.status}</div><p className="mt-1 text-sm leading-6 text-accent-foreground">{checkoutState.message ?? 'O pagamento ainda não foi confirmado. Não feche esta página até finalizar.'}</p>{checkoutState.status === 'pending' && checkoutState.copyPaste && <div className="mt-4 flex flex-col gap-2 sm:flex-row"><input readOnly value={checkoutState.copyPaste} className="form-input flex-1 bg-card font-mono text-xs" data-testid="input-pix-copy-paste" /><Button variant="secondary" onClick={() => navigator.clipboard?.writeText(checkoutState.copyPaste ?? '')} data-testid="button-copy-pix"><Copy size={15} /> Copiar código</Button></div>}</div>}<div className="grid gap-4 lg:grid-cols-3">{plans.map((plan, idx) => <div key={plan.id} className={`sw-card relative flex flex-col rounded-2xl p-6 ${idx === 1 ? 'border-2 border-primary shadow-[0_16px_34px_rgba(232,83,26,.12)]' : ''}`} data-testid={`card-plan-${plan.id}`}>{idx === 1 && <div className="absolute -top-3 left-5 rounded-full bg-primary px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-primary-foreground">Mais escolhido</div>}<div className="text-[11px] font-bold uppercase tracking-[.15em] text-primary-text">{plan.name}</div><h2 className="sw-display mt-2 text-2xl font-bold text-foreground">{plan.description}</h2><div className="mt-5"><span className="sw-display text-4xl font-bold tracking-[-.06em] text-foreground">{money(cycle === 'monthly' ? plan.monthlyPriceCents : Math.round(plan.annualPriceCents / 12))}</span><span className="text-xs text-muted-foreground"> / mês</span></div><div className="mt-5 space-y-3 border-t border-border pt-5 text-sm text-muted-foreground">{(plan.features ?? []).map(feature => <div key={feature} className="flex items-center gap-2"><CheckCircle2 size={15} className="text-primary" />{feature}</div>)}</div><Button onClick={() => startCheckout(plan.id)} disabled={checkout.isPending || plan.id === current?.plan.id} variant={idx === 1 ? 'primary' : 'secondary'} className="mt-7 w-full" data-testid={`button-select-plan-${plan.id}`}>{plan.id === current?.plan.id ? 'Plano atual' : selected === plan.id && checkout.isPending ? 'Gerando Pix…' : 'Escolher plano'}</Button></div>)}</div><div className="mt-6 text-center text-xs text-muted-foreground">Pagamento processado por Mercado Pago. O plano só muda após confirmação do webhook.</div></>;
 }
 
 type SessionInfo = { id: string; lastActiveAt: string; createdAt: string; ip: string | null; city: string | null; country: string | null; browser: string | null; deviceType: 'mobile' | 'desktop' };
@@ -1036,7 +1053,7 @@ function SettingsPage() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex shrink-0 items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${tab === t.id ? 'border-[#e8531a] text-[#e8531a]' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${tab === t.id ? 'border-primary text-primary-text' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
             data-testid={`tab-settings-${t.id}`}
           >
             <t.icon size={15} />
@@ -1050,7 +1067,7 @@ function SettingsPage() {
         <div className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
           <section className="sw-card rounded-2xl p-6 lg:p-8">
             <div className="flex items-center gap-3 border-b border-border pb-5">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fee8da] text-[#d44517]"><Globe2 size={19} /></div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground"><Globe2 size={19} /></div>
               <div><h2 className="sw-display text-xl font-bold text-foreground">Idioma e região</h2><p className="mt-1 text-xs text-muted-foreground">Como datas e rótulos aparecem na sua conta.</p></div>
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -1060,7 +1077,7 @@ function SettingsPage() {
               <Field label="Formato de hora"><select value={form.timeFormat} onChange={e => set('timeFormat', e.target.value)} className="form-input" data-testid="select-time-format"><option value="24h">24 horas · 14:30</option><option value="12h">12 horas · 2:30 PM</option></select></Field>
             </div>
             <div className="mt-9 flex items-center gap-3 border-t border-border pt-6">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fee8da] text-[#c43e12]"><Sparkles size={18} /></div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground"><Sparkles size={18} /></div>
               <div className="flex-1">
                 <div className="text-sm font-bold text-foreground">Notificações no app</div>
                 <div className="mt-1 text-xs text-muted-foreground">
@@ -1082,7 +1099,7 @@ function SettingsPage() {
                   }
                   set('inAppNotifications', next);
                 }}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${form.inAppNotifications ? 'bg-[#e8531a]' : 'bg-muted-foreground/30'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${form.inAppNotifications ? 'bg-primary' : 'bg-muted-foreground/30'}`}
               >
                 {/* thumb — block (not absolute) so translate is self-contained */}
                 <span className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${form.inAppNotifications ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -1095,11 +1112,11 @@ function SettingsPage() {
 
           <aside className="space-y-5">
             <section className="sw-card rounded-2xl p-6">
-              <div className="flex items-center gap-2 text-[#d44517]"><KeyRound size={17} /><h2 className="font-bold">Conta e segurança</h2></div>
-              <div className="mt-5 divide-y divide-[#e8e5df] text-sm">
-                <button className="flex w-full items-center justify-between py-3 text-left font-semibold text-muted-foreground hover:text-[#d44517]" data-testid="button-manage-account">Gerenciar conta <ArrowRight size={15} /></button>
-                <button className="flex w-full items-center justify-between py-3 text-left font-semibold text-muted-foreground hover:text-[#d44517]" data-testid="button-change-password">Alterar senha <ArrowRight size={15} /></button>
-                <button className="flex w-full items-center justify-between py-3 text-left font-semibold text-[#a75c51] hover:text-[#843f35]" data-testid="button-delete-account">Solicitar exclusão <ArrowRight size={15} /></button>
+              <div className="flex items-center gap-2 text-primary-text"><KeyRound size={17} /><h2 className="font-bold">Conta e segurança</h2></div>
+              <div className="mt-5 divide-y divide-border text-sm">
+                <button className="flex w-full items-center justify-between py-3 text-left font-semibold text-muted-foreground hover:text-primary-text" data-testid="button-manage-account">Gerenciar conta <ArrowRight size={15} /></button>
+                <button className="flex w-full items-center justify-between py-3 text-left font-semibold text-muted-foreground hover:text-primary-text" data-testid="button-change-password">Alterar senha <ArrowRight size={15} /></button>
+                <button className="flex w-full items-center justify-between py-3 text-left font-semibold text-destructive hover:text-destructive/80" data-testid="button-delete-account">Solicitar exclusão <ArrowRight size={15} /></button>
               </div>
             </section>
             <section className="rounded-2xl bg-[#0f0f0f] p-6 text-[#fce8da]">
@@ -1117,14 +1134,14 @@ function SettingsPage() {
           {/* Avatar */}
           <section className="sw-card rounded-2xl p-6 lg:p-8">
             <div className="flex items-center gap-3 border-b border-border pb-5">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fee8da] text-[#d44517]"><UserCircle2 size={19} /></div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground"><UserCircle2 size={19} /></div>
               <div><h2 className="sw-display text-xl font-bold text-foreground">Foto de perfil</h2><p className="mt-1 text-xs text-muted-foreground">Aparece no topo do painel e em notificações.</p></div>
             </div>
             <div className="mt-6 flex flex-col items-center gap-5">
               <div className="relative">
                 {user?.imageUrl
-                  ? <img src={user.imageUrl} alt="Avatar" className="h-24 w-24 rounded-full object-cover ring-4 ring-[#fde8d4]" />
-                  : <div className="grid h-24 w-24 place-items-center rounded-full bg-[#e8531a] text-2xl font-extrabold text-foreground">{(user?.firstName?.[0] ?? user?.fullName?.[0] ?? '?').toUpperCase()}</div>
+                  ? <img src={user.imageUrl} alt="Avatar" className="h-24 w-24 rounded-full object-cover ring-4 ring-accent" />
+                  : <div className="grid h-24 w-24 place-items-center rounded-full bg-primary text-2xl font-extrabold text-primary-foreground">{(user?.firstName?.[0] ?? user?.fullName?.[0] ?? '?').toUpperCase()}</div>
                 }
                 {uploading && (
                   <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
@@ -1156,14 +1173,14 @@ function SettingsPage() {
           {/* Name */}
           <section className="sw-card rounded-2xl p-6 lg:p-8">
             <div className="flex items-center gap-3 border-b border-border pb-5">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fee8da] text-[#d44517]"><Pencil size={17} /></div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground"><Pencil size={17} /></div>
               <div><h2 className="sw-display text-xl font-bold text-foreground">Nome de exibição</h2><p className="mt-1 text-xs text-muted-foreground">Como você aparece no painel e nos alertas.</p></div>
             </div>
             <div className="mt-6 space-y-4">
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="text-xs text-muted-foreground">Nome atual</div>
                 <div className="mt-1 text-sm font-bold text-foreground">{user?.fullName ?? user?.firstName ?? '—'}</div>
-                <div className="mt-0.5 text-xs text-[#b0aba5]">{user?.primaryEmailAddress?.emailAddress}</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</div>
               </div>
               {!editingName ? (
                 <Button variant="secondary" onClick={() => { setNewFirstName(user?.firstName ?? ''); setNewLastName(user?.lastName ?? ''); setEditingName(true); }} className="w-full" data-testid="button-edit-name">
@@ -1196,7 +1213,7 @@ function SettingsPage() {
       {tab === 'devices' && (
         <section className="sw-card rounded-2xl p-6 lg:p-8">
           <div className="mb-6 flex items-center gap-3 border-b border-border pb-5">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#fee8da] text-[#d44517]"><Monitor size={19} /></div>
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground"><Monitor size={19} /></div>
             <div>
               <h2 className="sw-display text-xl font-bold text-foreground">Sessões ativas</h2>
               <p className="mt-1 text-xs text-muted-foreground">Dispositivos com acesso à sua conta agora. Revogue sessões suspeitas.</p>
@@ -1213,15 +1230,15 @@ function SettingsPage() {
           ) : (
             <div className="space-y-3">
               {sessions.map((s, idx) => (
-                <div key={s.id} className={`rounded-xl border p-4 ${idx === 0 ? 'border-[#f0c8b0] bg-[#f5fff9]' : 'border-border bg-[#f9fcfb]'}`}>
+                <div key={s.id} className={`rounded-xl border p-4 ${idx === 0 ? 'border-primary/30 bg-accent' : 'border-border bg-card'}`}>
                   <div className="flex items-start gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#fee8da] text-[#d44517]">
+                    <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground">
                       {s.deviceType === 'mobile' ? <Smartphone size={16} /> : <Laptop size={16} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-bold text-foreground">{s.browser ?? (s.deviceType === 'mobile' ? 'Dispositivo móvel' : 'Navegador desktop')}</span>
-                        {idx === 0 && <span className="rounded-full bg-[#fde8d4] px-2 py-0.5 text-[10px] font-bold text-[#d44517]">Sessão atual</span>}
+                        {idx === 0 && <span className="rounded-full bg-card px-2 py-0.5 text-[10px] font-bold text-accent-foreground">Sessão atual</span>}
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
                         {s.ip && <span className="flex items-center gap-1"><MapPin size={10} /> {s.ip}</span>}
@@ -1236,9 +1253,9 @@ function SettingsPage() {
             </div>
           )}
 
-          <div className="mt-6 rounded-xl border border-[#fcc4a0] bg-[#fff4ee] p-4 text-sm">
-            <div className="flex items-center gap-2 font-bold text-[#c43e12]"><ShieldCheck size={15} /> Sessões isoladas por conta</div>
-            <p className="mt-1 leading-6 text-[#c43e12]">Cada sessão é criptografada com AES-256-GCM e vinculada exclusivamente à sua conta. Para revogar uma sessão, desconecte sua sessão na página de Conexão.</p>
+          <div className="mt-6 rounded-xl border border-primary/30 bg-accent p-4 text-sm">
+            <div className="flex items-center gap-2 font-bold text-accent-foreground"><ShieldCheck size={15} /> Sessões isoladas por conta</div>
+            <p className="mt-1 leading-6 text-accent-foreground">Cada sessão é criptografada com AES-256-GCM e vinculada exclusivamente à sua conta. Para revogar uma sessão, desconecte sua sessão na página de Conexão.</p>
           </div>
         </section>
       )}
@@ -1248,7 +1265,7 @@ function SettingsPage() {
         <div className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
           <section className="sw-card rounded-2xl p-6 lg:p-8">
             <div className="flex items-center gap-3 border-b border-border pb-5">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ffe5df] text-[#a84032]"><Bug size={17} /></div>
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-destructive/10 text-destructive"><Bug size={17} /></div>
               <div><h2 className="sw-display text-xl font-bold text-foreground">Relatar um problema</h2><p className="mt-1 text-xs text-muted-foreground">Descreva o que aconteceu. Nossa equipe analisa todos os relatórios.</p></div>
             </div>
             <div className="mt-6 space-y-4">
@@ -1286,15 +1303,15 @@ function SettingsPage() {
 
           <aside className="space-y-4">
             <section className="sw-card rounded-2xl p-6">
-              <div className="flex items-center gap-2 text-[#d44517]"><FileText size={17} /><h2 className="font-bold">Documentação</h2></div>
-              <div className="mt-5 divide-y divide-[#e8e5df] text-sm">
+              <div className="flex items-center gap-2 text-primary-text"><FileText size={17} /><h2 className="font-bold">Documentação</h2></div>
+              <div className="mt-5 divide-y divide-border text-sm">
                 {[
                   { label: 'Política de privacidade', href: '/privacy' },
                   { label: 'Termos de uso', href: '/terms' },
                   { label: 'Como funciona o monitoramento', href: '/privacy' },
                   { label: 'Conformidade LGPD', href: '/privacy' },
                 ].map(({ label, href }) => (
-                  <Link key={label} href={href} className="flex items-center justify-between py-3 text-muted-foreground hover:text-[#d44517]">
+                  <Link key={label} href={href} className="flex items-center justify-between py-3 text-muted-foreground hover:text-primary-text">
                     {label} <ArrowRight size={14} />
                   </Link>
                 ))}
@@ -1349,17 +1366,17 @@ function OnboardingPage() {
     <div className="sw-noise min-h-[100dvh] bg-background">
       <header className="flex items-center justify-between px-5 py-6 lg:px-12">
         <Logo />
-        <Link href="/app" className="text-sm font-bold text-foreground hover:text-[#252525]" data-testid="link-exit-onboarding">Pular configuração</Link>
+        <Link href="/app" className="text-sm font-bold text-foreground hover:text-foreground" data-testid="link-exit-onboarding">Pular configuração</Link>
       </header>
       <main className="mx-auto max-w-4xl px-5 pb-16 pt-8 lg:pt-14">
         {/* Progress bar */}
         <div className="flex items-center gap-2">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map(n => (
             <div key={n} className="flex flex-1 items-center gap-2">
-              <div className={`grid h-8 w-8 place-items-center rounded-full text-xs font-bold ${step > n ? 'bg-[#e8531a] text-white' : step === n ? 'bg-[#e8531a] text-white' : 'bg-[#dcebe6] text-muted-foreground'}`}>
+              <div className={`grid h-8 w-8 place-items-center rounded-full text-xs font-bold ${step >= n ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                 {step > n ? <Check size={15} /> : n}
               </div>
-              {n < TOTAL_STEPS && <div className={`h-0.5 flex-1 ${step > n ? 'bg-[#78736e]' : 'bg-[#dcebe6]'}`} />}
+              {n < TOTAL_STEPS && <div className={`h-0.5 flex-1 ${step > n ? 'bg-primary' : 'bg-muted'}`} />}
             </div>
           ))}
         </div>
@@ -1367,14 +1384,14 @@ function OnboardingPage() {
         {step === 1 && (
           <div className="mx-auto mt-14 max-w-xl">
             <div className="text-center">
-              <div className="text-[11px] font-bold uppercase tracking-[.17em] text-[#d44517]">Configure sua conta · 01</div>
+              <div className="text-[11px] font-bold uppercase tracking-[.17em] text-primary-text">Configure sua conta · 01</div>
               <h1 className="sw-display mt-3 text-4xl font-bold tracking-[-.05em] text-foreground lg:text-5xl">Como quer ser chamado?</h1>
               <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-foreground">Seu nome aparecerá no painel e nos alertas. Você pode alterar depois nas configurações.</p>
             </div>
             <div className="sw-card mt-9 rounded-2xl p-7 lg:p-10">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold text-[#252525]">Primeiro nome <span className="text-[#de765f]">*</span></label>
+                  <label className="mb-1.5 block text-xs font-bold text-foreground">Primeiro nome <span className="text-destructive">*</span></label>
                   <input
                     value={firstName}
                     onChange={e => { setFirstName(e.target.value); setNameError(''); }}
@@ -1386,7 +1403,7 @@ function OnboardingPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold text-[#252525]">Sobrenome <span className="text-[#b0aba5] font-normal">(opcional)</span></label>
+                  <label className="mb-1.5 block text-xs font-bold text-foreground">Sobrenome <span className="text-muted-foreground font-normal">(opcional)</span></label>
                   <input
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
@@ -1397,11 +1414,11 @@ function OnboardingPage() {
                   />
                 </div>
               </div>
-              {nameError && <p className="mt-3 text-xs font-medium text-[#de765f]">{nameError}</p>}
+              {nameError && <p className="mt-3 text-xs font-medium text-destructive">{nameError}</p>}
               <button
                 onClick={saveName}
                 disabled={saving || !firstName.trim()}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#e8531a] px-5 py-3 text-sm font-bold text-white hover:bg-[#d44517] disabled:opacity-50"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 data-testid="button-save-name"
               >
                 {saving ? 'Salvando…' : <>Continuar <ArrowRight size={16} /></>}
@@ -1413,17 +1430,17 @@ function OnboardingPage() {
         {step === 2 && (
           <div className="mx-auto mt-14 max-w-2xl">
             <div className="text-center">
-              <div className="text-[11px] font-bold uppercase tracking-[.17em] text-[#d44517]">Configure sua conta · 02</div>
+              <div className="text-[11px] font-bold uppercase tracking-[.17em] text-primary-text">Configure sua conta · 02</div>
               <h1 className="sw-display mt-3 text-4xl font-bold tracking-[-.05em] text-foreground lg:text-5xl">Conecte seu Telegram.</h1>
               <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-foreground">Uma sessão pessoal permite que o radar acompanhe seus grupos. Você autoriza pelo próprio Telegram, sem compartilhar senha.</p>
             </div>
             <div className="sw-card mt-9 rounded-2xl p-7 lg:p-10">
               <div className="mx-auto max-w-md text-center">
-                <div className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-[#fee8da] text-[#252525]">
+                <div className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-accent text-accent-foreground">
                   <QrCode size={38} />
                 </div>
                 <p className="mt-5 text-sm leading-6 text-foreground">Você pode conectar agora na página de <strong>Conexão</strong> depois de entrar no app. O radar começa a funcionar assim que autorizar.</p>
-                <button onClick={() => setStep(3)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-[#e8531a] px-5 py-3 text-sm font-bold text-white hover:bg-[#d44517]" data-testid="button-onboarding-skip-telegram">
+                <button onClick={() => setStep(3)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90" data-testid="button-onboarding-skip-telegram">
                   Entendido, entrar no app <ArrowRight size={16} />
                 </button>
               </div>
@@ -1433,16 +1450,16 @@ function OnboardingPage() {
 
         {step === 3 && (
           <div className="sw-fade-up mx-auto mt-16 max-w-xl text-center">
-            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[#fee8da] text-[#252525]">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-accent text-accent-foreground">
               <CheckCircle2 size={31} />
             </div>
             <h1 className="sw-display mt-6 text-4xl font-bold tracking-[-.04em] text-foreground">Tudo pronto{firstName ? `, ${firstName}` : ''}.</h1>
             <p className="mt-4 text-base leading-7 text-foreground">Seu radar está configurado. Conecte o Telegram e crie regras para começar a receber sinais.</p>
-            <Link href="/app/connection" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[#e8531a] px-5 py-3 text-sm font-bold text-white hover:bg-[#d44517]" data-testid="link-finish-onboarding">
+            <Link href="/app/connection" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90" data-testid="link-finish-onboarding">
               Conectar Telegram <ArrowRight size={16} />
             </Link>
             <div className="mt-4">
-              <Link href="/app" className="text-sm font-bold text-foreground hover:text-[#252525]" data-testid="link-skip-to-dashboard">
+              <Link href="/app" className="text-sm font-bold text-foreground hover:text-foreground" data-testid="link-skip-to-dashboard">
                 Ir direto para o painel
               </Link>
             </div>
@@ -1456,7 +1473,7 @@ function OnboardingPage() {
 
 
 function LegalPage({ privacy = false }: { privacy?: boolean }) {
-  return <div className="min-h-[100dvh] bg-background text-foreground"><header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6"><Logo /><Link href="/" className="text-sm font-bold text-foreground" data-testid="link-legal-home">Voltar para início</Link></header><main className="mx-auto max-w-3xl px-5 pb-20 pt-10"><div className="text-[11px] font-bold uppercase tracking-[.17em] text-[#d44517]">ViaX: Trace · documento legal</div><h1 className="sw-display mt-3 text-5xl font-bold tracking-[-.05em] text-foreground">{privacy ? 'Política de privacidade' : 'Termos de uso'}</h1><p className="mt-4 text-sm text-muted-foreground">Última atualização: 12 de agosto de 2026</p><div className="prose prose-sm mt-12 max-w-none prose-headings:font-[var(--app-font-serif)] prose-headings:text-foreground prose-p:leading-7 prose-p:text-muted-foreground prose-li:text-muted-foreground"><h2>1. Escopo</h2><p>{privacy ? 'Esta política explica quais dados o ViaX: Trace trata para entregar alertas de oportunidades comerciais e como você pode controlar esse tratamento.' : 'Estes termos regulam o uso do ViaX: Trace, uma ferramenta para monitoramento configurável de grupos do Telegram e organização de alertas comerciais.'}</p><h2>2. Uso responsável</h2><p>Você é responsável por usar o serviço de acordo com as regras do Telegram, com a legislação aplicável e com as permissões necessárias para os grupos que escolher monitorar.</p><h2>3. Integrações e estados</h2><p>Integrações de terceiros podem estar indisponíveis, pendentes ou sujeitas a confirmação externa. O ViaX: Trace informa esses estados sem presumir que uma autorização ou pagamento foi concluído.</p><h2>4. Dados e controle</h2><p>{privacy ? 'Tratamos dados de conta, preferências, grupos selecionados e mensagens necessárias para encontrar correspondências às suas regras. Você pode desconectar a sessão, alterar preferências e solicitar exclusão.' : 'Você mantém controle sobre suas regras, grupos e sessão. Recursos e limites podem variar conforme o plano contratado.'}</p><h2>5. Contato</h2><p>Para dúvidas sobre estes documentos ou sobre sua conta, use o canal de suporte indicado dentro do produto.</p></div></main></div>;
+  return <div className="min-h-[100dvh] bg-background text-foreground"><header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6"><Logo /><Link href="/" className="text-sm font-bold text-foreground" data-testid="link-legal-home">Voltar para início</Link></header><main className="mx-auto max-w-3xl px-5 pb-20 pt-10"><div className="text-[11px] font-bold uppercase tracking-[.17em] text-primary-text">ViaX: Trace · documento legal</div><h1 className="sw-display mt-3 text-5xl font-bold tracking-[-.05em] text-foreground">{privacy ? 'Política de privacidade' : 'Termos de uso'}</h1><p className="mt-4 text-sm text-muted-foreground">Última atualização: 12 de agosto de 2026</p><div className="prose prose-sm mt-12 max-w-none prose-headings:font-[var(--app-font-serif)] prose-headings:text-foreground prose-p:leading-7 prose-p:text-muted-foreground prose-li:text-muted-foreground"><h2>1. Escopo</h2><p>{privacy ? 'Esta política explica quais dados o ViaX: Trace trata para entregar alertas de oportunidades comerciais e como você pode controlar esse tratamento.' : 'Estes termos regulam o uso do ViaX: Trace, uma ferramenta para monitoramento configurável de grupos do Telegram e organização de alertas comerciais.'}</p><h2>2. Uso responsável</h2><p>Você é responsável por usar o serviço de acordo com as regras do Telegram, com a legislação aplicável e com as permissões necessárias para os grupos que escolher monitorar.</p><h2>3. Integrações e estados</h2><p>Integrações de terceiros podem estar indisponíveis, pendentes ou sujeitas a confirmação externa. O ViaX: Trace informa esses estados sem presumir que uma autorização ou pagamento foi concluído.</p><h2>4. Dados e controle</h2><p>{privacy ? 'Tratamos dados de conta, preferências, grupos selecionados e mensagens necessárias para encontrar correspondências às suas regras. Você pode desconectar a sessão, alterar preferências e solicitar exclusão.' : 'Você mantém controle sobre suas regras, grupos e sessão. Recursos e limites podem variar conforme o plano contratado.'}</p><h2>5. Contato</h2><p>Para dúvidas sobre estes documentos ou sobre sua conta, use o canal de suporte indicado dentro do produto.</p></div></main></div>;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -1482,7 +1499,7 @@ function SignInPage() {
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
       <Link
         href="/forgot-password"
-        className="text-sm text-[#6b6560] transition-colors hover:text-[#e8e5e0]"
+        className="text-sm text-[#928d87] transition-colors hover:text-[#e8e5e0]"
         data-testid="link-forgot-password"
       >
         Esqueceu sua senha?
@@ -1587,7 +1604,7 @@ function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full rounded-xl bg-[#e8531a] py-3 text-sm font-bold text-white shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover:bg-[#d44517] disabled:opacity-50"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover:bg-primary/90 disabled:opacity-50"
                 data-testid="button-send-reset-code"
               >
                 {loading ? 'Enviando…' : 'Enviar código'}
@@ -1644,7 +1661,7 @@ function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !code || !password}
-                className="w-full rounded-xl bg-[#e8531a] py-3 text-sm font-bold text-white shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover:bg-[#d44517] disabled:opacity-50"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover:bg-primary/90 disabled:opacity-50"
                 data-testid="button-confirm-reset"
               >
                 {loading ? 'Redefinindo…' : 'Redefinir senha'}
@@ -1662,8 +1679,8 @@ function ForgotPasswordPage() {
           {/* ── Step 3: done ────────────────────────────── */}
           {step === 'done' && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-full bg-[#e8531a]/10">
-                <CheckCircle2 size={28} className="text-[#e8531a]" />
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10">
+                <CheckCircle2 size={28} className="text-primary" />
               </div>
               <h2 className="sw-display text-xl font-bold text-foreground">Senha redefinida!</h2>
               <p className="text-sm text-muted-foreground">

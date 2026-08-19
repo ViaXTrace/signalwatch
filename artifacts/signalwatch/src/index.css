@@ -24,6 +24,7 @@
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-primary-border: var(--primary-border);
+  --color-primary-text: hsl(var(--primary-text));
 
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
@@ -111,9 +112,11 @@
   --popover-foreground: 0 0% 6%;
   --popover-border: 38 13% 88%;
 
-  /* Orange — #e8531a */
-  --primary: 17 82% 51%;
+  /* Orange — #e8531a, darkened to 42% L so white button text clears WCAG AA (4.5:1) */
+  --primary: 17 82% 42%;
   --primary-foreground: 0 0% 100%;
+  /* Darker orange for use as standalone text/links on light backgrounds — 4.5:1+ vs background and card */
+  --primary-text: 17 82% 38%;
 
   /* Light orange secondary — #fae6d8 */
   --secondary: 21 88% 92%;
@@ -126,10 +129,11 @@
 
   /* Accent tint — #fee8da */
   --accent: 21 92% 93%;
-  /* Orange accent foreground */
-  --accent-foreground: 17 82% 51%;
+  /* Orange accent foreground — darkened to match --primary-text for 4.5:1+ on accent tint */
+  --accent-foreground: 17 82% 38%;
 
-  --destructive: 4 72% 52%;
+  /* Darkened from 52% L so it clears 4.5:1 as standalone text on background/card */
+  --destructive: 4 72% 44%;
   --destructive-foreground: 0 0% 99%;
 
   /* Charts — orange family */
@@ -195,15 +199,19 @@
   --popover: 0 0% 11%;
   --popover-foreground: 35 12% 91%;
   --popover-border: 0 0% 18%;
-  --primary: 17 82% 55%;
+  /* Darkened to 42% L so white button text clears WCAG AA (4.5:1) — same fill value as light mode */
+  --primary: 17 82% 42%;
   --primary-foreground: 0 0% 100%;
+  /* Brighter orange for use as standalone text/links against dark backgrounds — 4.5:1+ vs background and card */
+  --primary-text: 17 82% 54%;
   --secondary: 17 20% 18%;
   --secondary-foreground: 35 12% 91%;
   --muted: 0 0% 14%;
   --muted-foreground: 33 5% 60%;
   --accent: 17 30% 18%;
   --accent-foreground: 17 82% 65%;
-  --destructive: 4 72% 58%;
+  /* Brightened from 58% L so it clears 4.5:1 as standalone text on dark background/card */
+  --destructive: 4 72% 62%;
   --destructive-foreground: 0 0% 99%;
   --input: 0 0% 18%;
   --ring: 17 82% 55%;

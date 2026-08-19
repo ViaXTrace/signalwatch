@@ -14,7 +14,7 @@ export interface RuleInput {
   keywords: string[];
   requiredKeywords?: string[];
   excludedKeywords?: string[];
-  /** @minItems 1 */
+  /** Empty array means the rule applies to all monitored groups. */
   groupIds: string[];
   matchType: RuleInputMatchType;
   active: boolean;

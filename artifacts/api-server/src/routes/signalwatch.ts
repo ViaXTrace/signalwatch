@@ -53,6 +53,7 @@ import {
 import { requireAuth } from "../middlewares/auth";
 import {
   BILLING_PLANS,
+  type BillingPlan,
   connectionDto,
   ensureWorkspace,
   getBillingPlan,
@@ -138,7 +139,7 @@ function ruleDto(rule: typeof signalwatchRulesTable.$inferSelect) {
   };
 }
 
-function planDto(plan: (typeof BILLING_PLANS)[number]) {
+function planDto(plan: BillingPlan) {
   return { ...plan };
 }
 

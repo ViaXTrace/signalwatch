@@ -129,8 +129,9 @@ async function onSessionEstablished(
   userId: string,
   client: TelegramClient,
 ): Promise<void> {
-  // Save session
-  const sessionStr = client.session.save() as string;
+  // Save session — client is always constructed with a StringSession (see createClient),
+  // whose save() returns a string, but the base Session type declares save(): void.
+  const sessionStr = (client.session as StringSession).save();
   const ciphertext = encryptSession(sessionStr);
 
   // Get account label
@@ -444,7 +445,7 @@ export async function startQRAuth(
             firstQRResolve = null;
           }
           sendSSEEvent(userId, { type: "error", message: err.message });
-          return false;
+          return Promise.resolve(false);
         },
       },
     )

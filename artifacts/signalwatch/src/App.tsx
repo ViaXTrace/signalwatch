@@ -206,10 +206,10 @@ function Button({ children, className = '', variant = 'primary', ...props }: Rea
 function Pill({ children, tone = 'teal' }: { children: ReactNode; tone?: 'teal' | 'amber' | 'red' | 'slate' | 'blue' }) {
   const colors = {
     teal: 'bg-accent text-accent-foreground',
-    amber: 'bg-secondary text-secondary-foreground',
+    amber: 'border border-primary/30 bg-primary/15 text-primary-text',
     red: 'bg-destructive/10 text-destructive',
     slate: 'bg-muted text-muted-foreground',
-    blue: 'bg-muted text-muted-foreground',
+    blue: 'border border-border bg-card text-muted-foreground',
   };
   return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${colors[tone]}`}>{children}</span>;
 }
@@ -298,7 +298,7 @@ function NotificationPanel({ alerts, unreadCount, onClose }: { alerts: Alert[]; 
       <div className="border-t border-border px-4 py-3">
         <button
           onClick={() => { setLocation('/app/alerts'); onClose(); }}
-          className="w-full rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+          className="w-full rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground hover-elevate active-elevate"
         >
           Ver todos os alertas
         </button>
@@ -411,7 +411,7 @@ function AppShell({ children }: { children: ReactNode }) {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${location === item.href || (!item.exact && location.startsWith(item.href)) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover-elevate active-elevate ${location === item.href || (!item.exact && location.startsWith(item.href)) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70'}`}
               data-testid={`link-nav-${item.label.toLowerCase().replaceAll(' ', '-')}`}
             >
               <item.icon size={17} strokeWidth={1.8} />
@@ -431,7 +431,7 @@ function AppShell({ children }: { children: ReactNode }) {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${location.startsWith(item.href) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'}`}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors hover-elevate active-elevate ${location.startsWith(item.href) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70'}`}
               data-testid={`link-nav-${item.label.toLowerCase().replaceAll(' ', '-')}`}
             >
               <item.icon size={17} strokeWidth={1.8} />
@@ -448,7 +448,7 @@ function AppShell({ children }: { children: ReactNode }) {
         <div className="mt-3 flex items-center justify-between border-t border-sidebar-border px-2 pt-3">
           <button
             onClick={toggle}
-            className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold text-sidebar-foreground/60 transition-colors hover-elevate active-elevate"
             aria-label={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
             data-testid="button-theme-toggle"
           >
@@ -457,7 +457,7 @@ function AppShell({ children }: { children: ReactNode }) {
               : <><Moon size={14} /><span>Modo escuro</span></>
             }
           </button>
-          <button onClick={() => signOut({ redirectUrl: basePath || '/' })} className="rounded-lg p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors" aria-label="Sair" data-testid="button-sign-out"><LogOut size={15} /></button>
+          <button onClick={() => signOut({ redirectUrl: basePath || '/' })} className="rounded-lg p-2 text-sidebar-foreground/60 transition-colors hover-elevate active-elevate" aria-label="Sair" data-testid="button-sign-out"><LogOut size={15} /></button>
         </div>
         <div className="mt-2 flex items-center gap-3 px-2 pb-1">
           {user?.imageUrl
@@ -521,9 +521,9 @@ function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; 
 
 function Metric({ label, value, note, icon: Icon, tone = 'teal' }: { label: string; value: string | number; note: string; icon: typeof Activity; tone?: 'teal' | 'amber' | 'blue' }) {
   const iconColor = {
-    teal: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-    blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    teal: 'bg-accent text-accent-foreground',
+    amber: 'border border-primary/30 bg-primary/15 text-primary-text',
+    blue: 'bg-muted text-muted-foreground',
   };
   return <div className="sw-card rounded-2xl p-5"><div className="flex items-start justify-between"><div className="text-xs font-bold uppercase tracking-[.09em] text-muted-foreground">{label}</div><div className={`grid h-9 w-9 place-items-center rounded-xl ${iconColor[tone]}`}><Icon size={17} /></div></div><div className="mt-5 sw-display text-4xl font-bold tracking-[-.05em] text-foreground">{value}</div><div className="mt-1 text-xs font-medium text-muted-foreground">{note}</div></div>;
 }
@@ -616,7 +616,7 @@ function Dashboard() {
   const firstName = user?.firstName ?? user?.fullName?.split(' ')[0] ?? 'você';
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-  return <><PageHeader eyebrow="Pulso de hoje" title={`${greeting}, ${firstName}.`} description="Alertas capturados nas últimas 24 horas, prontos pra você revisar." action={<Link href="/app/alerts" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_7px_18px_rgba(232,83,26,.18)] hover:bg-primary/90" data-testid="link-see-all-alerts">Abrir inbox <ArrowRight size={16} /></Link>} />
+  return <><PageHeader eyebrow="Pulso de hoje" title={`${greeting}, ${firstName}.`} description="Alertas capturados hoje, prontos pra você revisar." action={<Link href="/app/alerts" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_7px_18px_rgba(232,83,26,.18)] hover-elevate active-elevate" data-testid="link-see-all-alerts">Abrir inbox <ArrowRight size={16} /></Link>} />
     {summaryQuery.isLoading ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Skeleton className="h-36" /><Skeleton className="h-36" /><Skeleton className="h-36" /><Skeleton className="h-36" /></div> : health || !summaryQuery.data ? <ErrorState onRetry={() => summaryQuery.refetch()} label="O servidor não respondeu. Tente novamente para carregar seu panorama real." /> : <DashboardContent summary={summaryQuery.data} />}
   </>;
 }
@@ -657,7 +657,7 @@ function AlertsPage() {
       .then(() => { invalidate(); toast({ title: 'Alertas removidos.' }); })
       .catch(() => toast({ title: 'Não foi possível remover todos os alertas.', description: 'Tente novamente em instantes.', variant: 'destructive' }));
   };
-  return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Cada mensagem que bateu com uma das suas regras, na ordem em que chegou." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={clearAll} disabled={!alerts.length || archive.isPending} data-testid="button-clear-alerts"><Trash2 size={15} /> Limpar mensagens</Button><Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button></div>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-ring placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold ${period === item ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-foreground">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status === 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onRemove={() => action(archive, a.id, { archived: true }, 'Alerta removido.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
+  return <><PageHeader eyebrow="Caixa de entrada" title="Alertas" description="Cada mensagem que bateu com uma das suas regras, na ordem em que chegou." action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={clearAll} disabled={!alerts.length || archive.isPending} data-testid="button-clear-alerts"><Trash2 size={15} /> Limpar mensagens</Button><Button onClick={() => { query.refetch(); connectionQuery.refetch(); }} variant="secondary" disabled={query.isFetching || connectionQuery.isFetching} data-testid="button-refresh-alerts"><RefreshCw size={15} className={query.isFetching || connectionQuery.isFetching ? 'animate-spin' : ''} /> Atualizar</Button></div>} /><div className="sw-card rounded-2xl p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="relative flex-1"><Search size={17} className="absolute left-3.5 top-3.5 text-muted-foreground" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por mensagem, grupo ou regra" className="h-11 w-full rounded-lg border border-border bg-card pl-10 pr-4 text-sm outline-none ring-ring placeholder:text-muted-foreground focus:ring-2" data-testid="input-search-alerts" /></div><div className="flex items-center gap-2 overflow-x-auto"><Filter size={15} className="text-muted-foreground" />{(['today', '7d', '30d', 'all'] as const).map(item => <button key={item} onClick={() => setPeriod(item)} className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold hover-elevate active-elevate ${period === item ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`} data-testid={`button-period-${item}`}>{item === 'today' ? 'Hoje' : item === '7d' ? '7 dias' : item === '30d' ? '30 dias' : 'Tudo'}</button>)}</div></div></div><div className="mt-5 flex items-center justify-between"><div className="text-xs font-semibold text-muted-foreground"><span className="sw-mono text-foreground">{alerts.length}</span> sinais encontrados</div><div className="flex gap-2"><Pill tone="teal"><span className="h-1.5 w-1.5 rounded-full bg-current" /> internos</Pill><Pill tone={connectionQuery.data?.status === 'connected' ? 'teal' : 'amber'}><span className="h-1.5 w-1.5 rounded-full bg-current" /> {connectionLabel}</Pill></div></div><div className="mt-3 space-y-2">{query.isLoading ? [1, 2, 3].map(i => <Skeleton key={i} className="h-40" />) : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()} /> : alerts.length ? alerts.map(a => <AlertRow key={a.id} alert={a} onRead={() => action(mark, a.id, { read: a.status === 'unread' }, a.status === 'unread' ? 'Alerta marcado como lido.' : 'Alerta marcado como não lido.')} onRemove={() => action(archive, a.id, { archived: true }, 'Alerta removido.')} />) : <EmptyState icon={Search} title="Nada cruzou esse filtro" body="Tente outra palavra ou amplie o período para encontrar um sinal." action={<Button variant="secondary" onClick={() => { setSearch(''); setPeriod('all'); }} data-testid="button-clear-alert-filters">Limpar filtros</Button>} />}</div></>;
 }
 
 type RuleForm = { name: string; keywords: string; requiredKeywords: string; excludedKeywords: string; matchType: 'partial' | 'exact' | 'regex'; active: boolean; priority: number; cooldownMinutes: number };
@@ -874,7 +874,7 @@ function ConnectionPage({ onboarding = false }: { onboarding?: boolean }) {
               <button
                 onClick={submit2FA}
                 disabled={submitting2FA || !password2FA.trim()}
-                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-bold text-primary-foreground hover-elevate active-elevate disabled:opacity-50"
                 data-testid="button-submit-2fa"
               >{submitting2FA ? 'Enviando…' : 'Confirmar'}</button>
             </div>
@@ -1489,7 +1489,7 @@ function OnboardingPage() {
               <button
                 onClick={saveName}
                 disabled={saving || !firstName.trim()}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover-elevate active-elevate disabled:opacity-50"
                 data-testid="button-save-name"
               >
                 {saving ? 'Salvando…' : <>Continuar <ArrowRight size={16} /></>}
@@ -1511,7 +1511,7 @@ function OnboardingPage() {
                   <QrCode size={38} />
                 </div>
                 <p className="mt-5 text-sm leading-6 text-foreground">Você pode conectar agora na página de <strong>Conexão</strong> depois de entrar no app. O radar começa a funcionar assim que autorizar.</p>
-                <button onClick={() => setStep(3)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90" data-testid="button-onboarding-skip-telegram">
+                <button onClick={() => setStep(3)} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover-elevate active-elevate" data-testid="button-onboarding-skip-telegram">
                   Entendido, entrar no app <ArrowRight size={16} />
                 </button>
               </div>
@@ -1526,7 +1526,7 @@ function OnboardingPage() {
             </div>
             <h1 className="sw-display mt-6 text-4xl font-bold tracking-[-.04em] text-foreground">Tudo pronto{firstName ? `, ${firstName}` : ''}.</h1>
             <p className="mt-4 text-base leading-7 text-foreground">Seu radar está configurado. Conecte o Telegram e crie regras para começar a receber sinais.</p>
-            <Link href="/app/connection" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90" data-testid="link-finish-onboarding">
+            <Link href="/app/connection" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover-elevate active-elevate" data-testid="link-finish-onboarding">
               Conectar Telegram <ArrowRight size={16} />
             </Link>
             <div className="mt-4">
@@ -1682,7 +1682,7 @@ function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover:bg-primary/90 disabled:opacity-50"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover-elevate active-elevate disabled:opacity-50"
                 data-testid="button-send-reset-code"
               >
                 {loading ? 'Enviando…' : 'Enviar código'}
@@ -1739,7 +1739,7 @@ function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !code || !password}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover:bg-primary/90 disabled:opacity-50"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_16px_rgba(232,83,26,.22)] transition hover-elevate active-elevate disabled:opacity-50"
                 data-testid="button-confirm-reset"
               >
                 {loading ? 'Redefinindo…' : 'Redefinir senha'}

@@ -72,10 +72,10 @@ export default function Landing() {
           <Link href="/privacy" className="hover:text-[#e8531a]">Privacidade</Link>
         </nav>
         <div className="flex items-center gap-2">
-          <Link href="/sign-in" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-[#e8e5df] hover:text-foreground" data-testid="link-landing-sign-in">
+          <Link href="/sign-in" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-muted-foreground hover-elevate active-elevate" data-testid="link-landing-sign-in">
             Entrar
           </Link>
-          <Link href="/sign-up" className="rounded-lg bg-[#e8531a] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#d44517]" data-testid="link-landing-sign-up">
+          <Link href="/sign-up" className="rounded-lg bg-[#e8531a] px-4 py-2.5 text-sm font-semibold text-white hover-elevate active-elevate" data-testid="link-landing-sign-up">
             Criar conta
           </Link>
         </div>
@@ -100,10 +100,10 @@ export default function Landing() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/sign-in" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e8531a] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(232,83,26,.28)] hover:bg-[#d44517]" data-testid="link-hero-start">
+              <Link href="/sign-in" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#e8531a] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(232,83,26,.28)] hover-elevate active-elevate" data-testid="link-hero-start">
                 Acessar plataforma <ChevronRight size={16} />
               </Link>
-              <Link href="/privacy" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-6 py-3.5 text-sm font-semibold text-muted-foreground hover:bg-background" data-testid="link-hero-docs">
+              <Link href="/privacy" className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-6 py-3.5 text-sm font-semibold text-muted-foreground hover-elevate active-elevate" data-testid="link-hero-docs">
                 Política de privacidade
               </Link>
             </div>
@@ -163,7 +163,7 @@ export default function Landing() {
                   <div className="border-r border-[#f0c8b0] bg-[#fff4ee] p-4">
                     <div className="text-[9px] font-bold uppercase tracking-widest text-[#9a9490]">Panorama</div>
                     <div className="mt-4 text-3xl font-bold tracking-[-0.06em] text-[#0f0f0f]">24</div>
-                    <div className="text-[10px] text-[#6b6560]">promos hoje</div>
+                    <div className="text-[10px] text-[#6b6560]">capturas hoje</div>
                     <div className="mt-5 space-y-2.5">
                       {[['Não lidas', '08', 'bg-[#e8531a]'], ['Regras', '02', 'bg-[#0f0f0f]'], ['Grupos', '04', 'bg-[#c43e12]']].map(([label, count, color]) => (
                         <div key={label} className="flex items-center justify-between">
@@ -318,7 +318,7 @@ export default function Landing() {
                 </p>
               </div>
               <div className="flex items-start">
-                <Link href="/privacy" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-[#e8531a] hover:bg-accent">
+                <Link href="/privacy" className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-[#e8531a] hover-elevate active-elevate">
                   <FileText size={15} />
                   Política de privacidade
                 </Link>

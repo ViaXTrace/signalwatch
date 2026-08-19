@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BookOpen, ChevronRight, FileText, Lock, Scale, ShieldCheck, Target, Terminal, Zap } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -18,13 +19,47 @@ function Logo() {
   );
 }
 
-const PREVIEW_ALERTS = [
-  { id: 'a-1', groupName: 'Promos Eletrônicos BR', message: 'iPhone 15 Pro Max 256GB por R$4.299 — loja parceira, frete grátis SP/RJ.', keyword: 'iphone' },
-  { id: 'a-2', groupName: 'Ofertas Games 🎮', message: 'PS5 Slim + controle extra R$2.890 à vista. Estoque limitado, entrega imediata.', keyword: 'ps5' },
-  { id: 'a-3', groupName: 'Cupons & Cashback', message: 'Samsung Galaxy S24 com 30% de desconto + 10% cashback via Pix no app.', keyword: 'samsung' },
+const USE_CASES = [
+  {
+    id: 'eletronicos',
+    label: 'Eletrônicos & celulares',
+    alerts: [
+      { id: 'a-1', groupName: 'Promos Eletrônicos BR', message: 'iPhone 15 Pro Max 256GB por R$4.299 — loja parceira, frete grátis SP/RJ.', keyword: 'iphone' },
+      { id: 'a-2', groupName: 'Ofertas Games 🎮', message: 'PS5 Slim + controle extra R$2.890 à vista. Estoque limitado, entrega imediata.', keyword: 'ps5' },
+      { id: 'a-3', groupName: 'Cupons & Cashback', message: 'Samsung Galaxy S24 com 30% de desconto + 10% cashback via Pix no app.', keyword: 'samsung' },
+    ],
+  },
+  {
+    id: 'imoveis',
+    label: 'Imóveis',
+    alerts: [
+      { id: 'b-1', groupName: 'Repasses SP Capital', message: 'Repasse apto 2 dorm Vila Mariana, R$620mil, direto com proprietário, sem comissão.', keyword: 'repasse' },
+      { id: 'b-2', groupName: 'Lançamentos Zona Sul', message: 'Lançamento 3 dorm Moema, tabela de pré-lançamento até sexta, entrada facilitada.', keyword: 'lançamento' },
+      { id: 'b-3', groupName: 'Corretores Parceiros RJ', message: 'Cobertura Barra da Tijuca, 4 suítes, abaixo da tabela por urgência do proprietário.', keyword: 'cobertura' },
+    ],
+  },
+  {
+    id: 'vagas',
+    label: 'Vagas & oportunidades',
+    alerts: [
+      { id: 'c-1', groupName: 'Vagas Tech Remoto', message: 'Vaga dev backend pleno, remoto, CLT, R$9-12k. Envie currículo até amanhã.', keyword: 'backend' },
+      { id: 'c-2', groupName: 'Empregos SP Zona Norte', message: 'Contratação imediata operador de logística, turno tarde, vale-transporte incluso.', keyword: 'logística' },
+      { id: 'c-3', groupName: 'Freelas & PJ Design', message: 'Preciso de designer freelancer pra identidade visual, prazo 2 semanas, orçamento aberto.', keyword: 'freelancer' },
+    ],
+  },
+  {
+    id: 'licitacoes',
+    label: 'Licitações & fornecedores',
+    alerts: [
+      { id: 'd-1', groupName: 'Editais Compras Públicas', message: 'Pregão eletrônico aberto: fornecimento de material de escritório, prazo de proposta dia 28.', keyword: 'pregão' },
+      { id: 'd-2', groupName: 'Cotações B2B Brasil', message: 'Empresa busca cotação de embalagens personalizadas, volume 10mil un/mês.', keyword: 'cotação' },
+      { id: 'd-3', groupName: 'Rede de Fornecedores SP', message: 'Chamada de fornecedor de matéria-prima têxtil, entrega recorrente mensal.', keyword: 'fornecedor' },
+    ],
+  },
 ];
 
 export default function Landing() {
+  const [activeCase, setActiveCase] = useState(0);
   return (
     <div className="vx-noise min-h-[100dvh] overflow-hidden bg-background text-foreground">
 
@@ -52,16 +87,16 @@ export default function Landing() {
           <div className="relative z-10">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e8531a]/20 bg-[#fee8da] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[.15em] text-[#c43e12]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#e8531a]" />
-              Captura de promoções · Tempo real
+              Alertas automáticos · Grupos do Telegram
             </div>
 
             <h1 className="max-w-lg text-[2.9rem] font-bold leading-[1.06] tracking-[-0.055em] text-foreground lg:text-[3.9rem]">
-              Capture promoções antes que<br />
-              <span className="text-[#e8531a]">todo mundo veja.</span>
+              Ache a mensagem certa,<br />
+              <span className="text-[#e8531a]">no grupo certo, na hora certa.</span>
             </h1>
 
             <p className="mt-6 max-w-md text-[0.95rem] leading-[1.85] text-muted-foreground">
-              ViaX: Trace monitora grupos do Telegram pela palavra-chave que você definiu. Quando uma promoção aparece, você é o primeiro a saber — com controle total sobre o que é monitorado.
+              ViaX: Trace monitora os grupos e canais do Telegram que você escolher e avisa assim que a palavra-chave certa aparecer — como um Google Alerts, só que pra dentro dos grupos que o Google não enxerga.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -95,6 +130,22 @@ export default function Landing() {
 
           {/* Mock dashboard */}
           <div className="relative">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {USE_CASES.map((useCase, i) => (
+                <button
+                  key={useCase.id}
+                  onClick={() => setActiveCase(i)}
+                  className={`hover-elevate active-elevate rounded-full border px-3.5 py-2 text-xs font-bold transition-colors ${
+                    i === activeCase
+                      ? 'border-[#e8531a] bg-[#e8531a] text-white'
+                      : 'border-border bg-card text-muted-foreground'
+                  }`}
+                  data-testid={`button-usecase-${useCase.id}`}
+                >
+                  {useCase.label}
+                </button>
+              ))}
+            </div>
             <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#fcc4a0] opacity-40 blur-3xl" />
             <div className="relative rounded-[24px] border border-[#e8531a]/20 bg-[#fee8da] p-3 shadow-[0_28px_72px_rgba(232,83,26,.18)] lg:rotate-[1deg]">
               {/* This card is intentionally always light — it's a product screenshot mockup */}
@@ -135,7 +186,7 @@ export default function Landing() {
                   <div className="p-4">
                     <div className="text-[9px] font-bold uppercase tracking-widest text-[#9a9490]">Capturas recentes</div>
                     <div className="mt-3 space-y-2.5">
-                      {PREVIEW_ALERTS.map((a, i) => (
+                      {USE_CASES[activeCase].alerts.map((a, i) => (
                         <div key={a.id} className={`rounded-lg border p-2.5 ${i === 0 ? 'border-[#f0c8b0] bg-[#fff4ee]' : 'border-[#e4e1db] bg-white'}`}>
                           <div className="flex items-center gap-1 text-[8px] font-bold text-[#c43e12]">
                             <span className={`h-1.5 w-1.5 rounded-full ${i === 0 ? 'bg-[#e8531a]' : 'bg-[#c8c4be]'}`} />

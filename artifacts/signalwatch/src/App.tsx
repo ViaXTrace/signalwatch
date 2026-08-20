@@ -525,7 +525,7 @@ function Metric({ label, value, note, icon: Icon, tone = 'teal' }: { label: stri
     amber: 'border border-primary/30 bg-primary/15 text-primary-text',
     blue: 'bg-muted text-muted-foreground',
   };
-  return <div className="sw-card rounded-2xl p-5"><div className="flex items-start justify-between"><div className="text-xs font-bold uppercase tracking-[.09em] text-muted-foreground">{label}</div><div className={`grid h-9 w-9 place-items-center rounded-xl ${iconColor[tone]}`}><Icon size={17} /></div></div><div className="mt-5 sw-display text-4xl font-bold tracking-[-.05em] text-foreground">{value}</div><div className="mt-1 text-xs font-medium text-muted-foreground">{note}</div></div>;
+  return <div className="sw-card rounded-2xl p-5"><div className="flex items-start justify-between"><div className="text-xs font-bold uppercase tracking-[.09em] text-muted-foreground">{label}</div><div className={`grid h-9 w-9 place-items-center rounded-xl ${iconColor[tone]}`}><Icon size={17} /></div></div><div className="mt-5 sw-display text-[1.75rem] font-bold tracking-[-.04em] text-foreground sm:text-4xl">{value}</div><div className="mt-1 text-xs font-medium text-muted-foreground">{note}</div></div>;
 }
 
 // Messages past this length collapse by default — long enough that a
@@ -561,49 +561,51 @@ function AlertRow({ alert, onRead, onRemove }: { alert: Alert; onRead?: () => vo
 
   return (
     <article
-      className={`sw-transition group relative rounded-xl border p-4 ${alert.status === 'unread' ? 'border-primary/30 bg-card' : 'border-border bg-card'}`}
+      className={`sw-transition group relative rounded-xl border bg-card p-5 ${alert.status === 'unread' ? 'border-border border-l-[3px] border-l-primary' : 'border-border'}`}
       data-testid={`card-alert-${alert.id}`}
     >
       <div className="flex gap-3">
-        <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${alert.status === 'unread' ? 'bg-primary' : 'bg-border'}`} />
+        <div className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${alert.status === 'unread' ? 'bg-primary' : 'bg-border'}`} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-extrabold text-primary-text">{alert.groupName}</span>
             <span className="text-[11px] text-muted-foreground">· {relativeDate(alert.receivedAt)}</span>
             {alert.deliveryStatus === 'unavailable' && <Pill tone="amber">Entrega indisponível</Pill>}
           </div>
-          <p className="mt-2 break-words text-sm leading-6 text-foreground">
+          <p className="mt-2.5 break-words text-sm leading-6 text-foreground">
             {expanded ? alert.message : `${truncateAtCharBoundary(alert.message, MESSAGE_COLLAPSE_THRESHOLD)}…`}
           </p>
           {isLong && (
             <button
               onClick={() => setExpanded(e => !e)}
-              className="hover-elevate active-elevate mt-2 inline-flex items-center gap-1 rounded-full border border-primary/25 bg-accent px-3 py-1 text-[11px] font-bold text-accent-foreground"
+              className="hover-elevate active-elevate mt-2.5 inline-flex items-center gap-1 rounded-full border border-primary/25 bg-accent px-3 py-1 text-[11px] font-bold text-accent-foreground"
               data-testid={`button-toggle-message-${alert.id}`}
             >
               {expanded ? 'Recolher' : 'Ver mensagem completa'}
               <ChevronDown size={12} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
             </button>
           )}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {/* Metadata footer — keyword tags, rule name, and the Telegram deep
+              link grouped into one row so they read as "reference info",
+              distinct from the expand/collapse capsule above. */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
             {alert.matchedKeywords.map(k => (
               <span key={k} className="rounded-md bg-accent px-2 py-1 font-mono text-[10px] font-medium text-accent-foreground">#{k}</span>
             ))}
-            <span className="ml-1 text-[11px] text-muted-foreground">regra: {alert.ruleName}</span>
+            <span className="text-[11px] text-muted-foreground">regra: {alert.ruleName}</span>
+            {alert.messageLink && (
+              <a
+                href={alert.messageLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-accent/50 px-2.5 py-1.5 text-[11px] font-semibold text-primary-text hover-elevate active-elevate"
+                data-testid={`link-open-telegram-${alert.id}`}
+              >
+                <ExternalLink size={11} />
+                Abrir no Telegram
+              </a>
+            )}
           </div>
-          {/* Telegram deep link */}
-          {alert.messageLink && (
-            <a
-              href={alert.messageLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-accent/50 px-2.5 py-1.5 text-[11px] font-semibold text-primary-text hover-elevate active-elevate"
-              data-testid={`link-open-telegram-${alert.id}`}
-            >
-              <ExternalLink size={11} />
-              Abrir no Telegram
-            </a>
-          )}
         </div>
         <div className="flex shrink-0 items-start gap-0.5 opacity-60 transition-opacity group-hover:opacity-100">
           <button onClick={onRead} className="rounded-md p-2 text-muted-foreground hover-elevate active-elevate" aria-label={alert.status === 'unread' ? 'Marcar como lido' : 'Marcar como não lido'} data-testid={`button-read-${alert.id}`}>
@@ -1607,7 +1609,7 @@ function OnboardingPage() {
 
 
 function LegalPage({ privacy = false }: { privacy?: boolean }) {
-  return <div className="min-h-[100dvh] bg-background text-foreground"><header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6"><Logo /><Link href="/" className="text-sm font-bold text-foreground" data-testid="link-legal-home">Voltar para início</Link></header><main className="mx-auto max-w-3xl px-5 pb-20 pt-10"><div className="text-[11px] font-bold uppercase tracking-[.17em] text-primary-text">ViaX: Trace · documento legal</div><h1 className="sw-display mt-3 text-5xl font-bold tracking-[-.05em] text-foreground">{privacy ? 'Política de privacidade' : 'Termos de uso'}</h1><p className="mt-4 text-sm text-muted-foreground">Última atualização: 12 de agosto de 2026</p><div className="prose prose-sm mt-12 max-w-none prose-headings:font-[var(--app-font-serif)] prose-headings:text-foreground prose-p:leading-7 prose-p:text-muted-foreground prose-li:text-muted-foreground"><h2>1. Escopo</h2><p>{privacy ? 'Esta política explica quais dados o ViaX: Trace trata para entregar alertas de oportunidades comerciais e como você pode controlar esse tratamento.' : 'Estes termos regulam o uso do ViaX: Trace, uma ferramenta para monitoramento configurável de grupos do Telegram e organização de alertas comerciais.'}</p><h2>2. Uso responsável</h2><p>Você é responsável por usar o serviço de acordo com as regras do Telegram, com a legislação aplicável e com as permissões necessárias para os grupos que escolher monitorar.</p><h2>3. Integrações e estados</h2><p>Integrações de terceiros podem estar indisponíveis, pendentes ou sujeitas a confirmação externa. O ViaX: Trace informa esses estados sem presumir que uma autorização ou pagamento foi concluído.</p><h2>4. Dados e controle</h2><p>{privacy ? 'Tratamos dados de conta, preferências, grupos selecionados e mensagens necessárias para encontrar correspondências às suas regras. Você pode desconectar a sessão, alterar preferências e solicitar exclusão.' : 'Você mantém controle sobre suas regras, grupos e sessão. Recursos e limites podem variar conforme o plano contratado.'}</p><h2>5. Contato</h2><p>Para dúvidas sobre estes documentos ou sobre sua conta, use o canal de suporte indicado dentro do produto.</p></div></main></div>;
+  return <div className="min-h-[100dvh] bg-background text-foreground"><header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6"><Logo /><Link href="/" className="text-sm font-bold text-foreground" data-testid="link-legal-home">Voltar para início</Link></header><main className="mx-auto max-w-3xl px-5 pb-20 pt-10"><div className="text-[11px] font-bold uppercase tracking-[.17em] text-primary-text">ViaX: Trace · documento legal</div><h1 className="sw-display mt-3 text-3xl font-bold tracking-[-.04em] text-foreground lg:text-5xl">{privacy ? 'Política de privacidade' : 'Termos de uso'}</h1><p className="mt-4 text-sm text-muted-foreground">Última atualização: 12 de agosto de 2026</p><div className="prose prose-sm mt-12 max-w-none prose-headings:font-[var(--app-font-serif)] prose-headings:text-foreground prose-p:leading-7 prose-p:text-muted-foreground prose-li:text-muted-foreground"><h2>1. Escopo</h2><p>{privacy ? 'Esta política explica quais dados o ViaX: Trace trata para entregar alertas de oportunidades comerciais e como você pode controlar esse tratamento.' : 'Estes termos regulam o uso do ViaX: Trace, uma ferramenta para monitoramento configurável de grupos do Telegram e organização de alertas comerciais.'}</p><h2>2. Uso responsável</h2><p>Você é responsável por usar o serviço de acordo com as regras do Telegram, com a legislação aplicável e com as permissões necessárias para os grupos que escolher monitorar.</p><h2>3. Integrações e estados</h2><p>Integrações de terceiros podem estar indisponíveis, pendentes ou sujeitas a confirmação externa. O ViaX: Trace informa esses estados sem presumir que uma autorização ou pagamento foi concluído.</p><h2>4. Dados e controle</h2><p>{privacy ? 'Tratamos dados de conta, preferências, grupos selecionados e mensagens necessárias para encontrar correspondências às suas regras. Você pode desconectar a sessão, alterar preferências e solicitar exclusão.' : 'Você mantém controle sobre suas regras, grupos e sessão. Recursos e limites podem variar conforme o plano contratado.'}</p><h2>5. Contato</h2><p>Para dúvidas sobre estes documentos ou sobre sua conta, use o canal de suporte indicado dentro do produto.</p></div></main></div>;
 }
 
 function ClerkQueryClientCacheInvalidator() {

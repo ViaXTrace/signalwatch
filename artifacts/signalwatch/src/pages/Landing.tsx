@@ -90,7 +90,7 @@ export default function Landing() {
               Alertas automáticos · Grupos do Telegram
             </div>
 
-            <h1 className="max-w-lg text-[2.9rem] font-bold leading-[1.06] tracking-[-0.055em] text-foreground lg:text-[3.9rem]">
+            <h1 className="max-w-lg text-[2.1rem] font-bold leading-[1.15] tracking-[-0.045em] text-foreground lg:text-[3.9rem] lg:leading-[1.06] lg:tracking-[-0.055em]">
               Ache a mensagem certa,<br />
               <span className="text-[#e8531a]">no grupo certo, na hora certa.</span>
             </h1>

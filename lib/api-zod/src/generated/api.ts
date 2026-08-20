@@ -339,6 +339,19 @@ export const DeleteRuleResponse = zod.void()
 
 
 /**
+ * @summary Daily alert counts per rule for the last 14 days
+ */
+export const GetRuleStatsResponseItem = zod.object({
+  "ruleId": zod.string(),
+  "days": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "count": zod.number()
+}))
+})
+export const GetRuleStatsResponse = zod.array(GetRuleStatsResponseItem)
+
+
+/**
  * @summary Get Telegram connection status
  */
 export const GetConnectionStatusResponse = zod.object({

@@ -34,6 +34,8 @@ export * from './preferenceInputLanguage';
 export * from './preferenceInputTheme';
 export * from './qrAuthorization';
 export * from './qrAuthorizationStatus';
+export * from './ruleDailyStats';
+export * from './ruleDayCount';
 export * from './ruleInput';
 export * from './ruleInputMatchType';
 export * from './telegramConnection';

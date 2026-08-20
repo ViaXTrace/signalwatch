@@ -26,6 +26,7 @@ import {
   ListGroupsQueryParams,
   ListGroupsResponse,
   ListRulesResponse,
+  GetRuleStatsResponse,
   MarkAlertReadBody,
   MarkAlertReadParams,
   MarkAlertReadResponse,
@@ -537,6 +538,56 @@ router.delete("/rules/:ruleId", async (req, res): Promise<void> => {
     return;
   }
   res.sendStatus(204);
+});
+
+router.get("/rules/stats", async (req, res): Promise<void> => {
+  const currentUserId = userId(req);
+  const rules = await db
+    .select({ id: signalwatchRulesTable.id })
+    .from(signalwatchRulesTable)
+    .where(eq(signalwatchRulesTable.clerkUserId, currentUserId));
+
+  const DAYS = 14;
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (DAYS - 1));
+
+  const alerts = await db
+    .select({ ruleId: signalwatchAlertsTable.ruleId, receivedAt: signalwatchAlertsTable.receivedAt })
+    .from(signalwatchAlertsTable)
+    .where(
+      and(
+        eq(signalwatchAlertsTable.clerkUserId, currentUserId),
+        gte(signalwatchAlertsTable.receivedAt, since),
+      ),
+    );
+
+  // Zero-filled per rule per day, oldest to newest, so a rule with no
+  // recent matches still renders a flat 14-bar chart instead of a gap.
+  const dayKeys: string[] = [];
+  for (let i = 0; i < DAYS; i++) {
+    const d = new Date(since);
+    d.setDate(since.getDate() + i);
+    dayKeys.push(d.toISOString().slice(0, 10));
+  }
+
+  const countsByRule = new Map<string, Map<string, number>>();
+  for (const alert of alerts) {
+    const dayKey = alert.receivedAt.toISOString().slice(0, 10);
+    if (!countsByRule.has(alert.ruleId)) countsByRule.set(alert.ruleId, new Map());
+    const dayMap = countsByRule.get(alert.ruleId)!;
+    dayMap.set(dayKey, (dayMap.get(dayKey) ?? 0) + 1);
+  }
+
+  const stats = rules.map((rule) => ({
+    ruleId: rule.id,
+    days: dayKeys.map((date) => ({
+      date,
+      count: countsByRule.get(rule.id)?.get(date) ?? 0,
+    })),
+  }));
+
+  res.json(GetRuleStatsResponse.parse(stats));
 });
 
 router.get("/connection/status", async (req, res): Promise<void> => {

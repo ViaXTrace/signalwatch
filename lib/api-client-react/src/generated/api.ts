@@ -35,6 +35,7 @@ import type {
   PixCheckout,
   PreferenceInput,
   QrAuthorization,
+  RuleDailyStats,
   RuleInput,
   TelegramConnection,
   TelegramGroup,
@@ -970,6 +971,83 @@ export const useDeleteRule = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteRuleMutationOptions(options));
     }
+
+export const getGetRuleStatsUrl = () => {
+
+
+
+
+  return `/api/rules/stats`
+}
+
+/**
+ * @summary Daily alert counts per rule for the last 14 days
+ */
+export const getRuleStats = async ( options?: Parameters<typeof customFetch>[1]): Promise<RuleDailyStats[]> => {
+
+  return customFetch<RuleDailyStats[]>(getGetRuleStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRuleStatsQueryKey = () => {
+    return [
+    `/api/rules/stats`
+    ] as const;
+    }
+
+
+export const getGetRuleStatsQueryOptions = <TData = Awaited<ReturnType<typeof getRuleStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRuleStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRuleStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRuleStats>>> = ({ signal }) => getRuleStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRuleStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRuleStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getRuleStats>>>
+export type GetRuleStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Daily alert counts per rule for the last 14 days
+ */
+
+export function useGetRuleStats<TData = Awaited<ReturnType<typeof getRuleStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRuleStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRuleStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetConnectionStatusUrl = () => {
 

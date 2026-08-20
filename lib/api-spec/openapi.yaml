@@ -255,6 +255,20 @@ paths:
       responses:
         "204":
           description: Rule deleted
+  /rules/stats:
+    get:
+      operationId: getRuleStats
+      tags: [rules]
+      summary: Daily alert counts per rule for the last 14 days
+      responses:
+        "200":
+          description: Per-rule daily stats, zero-filled for days with no matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RuleDailyStats"
   /connection/status:
     get:
       operationId: getConnectionStatus
@@ -549,6 +563,25 @@ components:
         createdAt:
           type: string
           format: date-time
+    RuleDayCount:
+      type: object
+      required: [date, count]
+      properties:
+        date:
+          type: string
+          format: date
+        count:
+          type: number
+    RuleDailyStats:
+      type: object
+      required: [ruleId, days]
+      properties:
+        ruleId:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleDayCount"
     RuleInput:
       type: object
       required: [name, keywords, groupIds, matchType, active, priority, cooldownMinutes]

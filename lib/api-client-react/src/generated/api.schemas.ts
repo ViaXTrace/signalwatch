@@ -152,6 +152,16 @@ export interface KeywordRule {
   createdAt?: string;
 }
 
+export interface RuleDayCount {
+  date: string;
+  count: number;
+}
+
+export interface RuleDailyStats {
+  ruleId: string;
+  days: RuleDayCount[];
+}
+
 export type RuleInputMatchType = typeof RuleInputMatchType[keyof typeof RuleInputMatchType];
 
 

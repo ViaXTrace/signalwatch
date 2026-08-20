@@ -1,6 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BookOpen, ChevronRight, FileText, Lock, Scale, ShieldCheck, Target, Terminal, Zap } from 'lucide-react';
 import { Link } from 'wouter';
+
+// Scroll-triggered fade-up reveal, staggered via `delay`. Reuses the
+// existing .vx-fade-up keyframe (index.css) instead of introducing a new
+// animation — that utility already no-ops under prefers-reduced-motion, so
+// this inherits that for free. Each section's cards get one Reveal apiece;
+// the hero and nav chrome stay un-animated since they're above the fold.
+function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`${visible ? 'vx-fade-up' : 'opacity-0'} ${className}`}
+      style={visible && delay ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
 
 function Logo() {
   return (
@@ -241,19 +277,21 @@ export default function Landing() {
                     body: 'Cada alerta inclui grupo, horário, fragmento da mensagem e keyword acionada. Favorite, marque como lido ou arquive. Tudo rastreável e auditável.',
                     badge: 'Rastreável · Auditável',
                   },
-                ].map(({ n, title, body, badge }) => (
-                  <div key={n} className="relative flex gap-6 rounded-2xl border border-border bg-card p-6 shadow-[0_2px_12px_rgba(0,0,0,.05)]">
-                    <div className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#0f0f0f] text-white text-sm font-bold">
-                      {n}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <h3 className="text-base font-bold text-foreground">{title}</h3>
-                        <span className="rounded-full bg-[#fee8da] px-2.5 py-1 text-[10px] font-bold text-[#c43e12]">{badge}</span>
+                ].map(({ n, title, body, badge }, i) => (
+                  <Reveal key={n} delay={i * 90}>
+                    <div className="relative flex gap-6 rounded-2xl border border-border bg-card p-6 shadow-[0_2px_12px_rgba(0,0,0,.05)]">
+                      <div className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#0f0f0f] text-white text-sm font-bold">
+                        {n}
                       </div>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">{body}</p>
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <h3 className="text-base font-bold text-foreground">{title}</h3>
+                          <span className="rounded-full bg-[#fee8da] px-2.5 py-1 text-[10px] font-bold text-[#c43e12]">{badge}</span>
+                        </div>
+                        <p className="mt-2 text-sm leading-7 text-muted-foreground">{body}</p>
+                      </div>
                     </div>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
             </div>
@@ -289,17 +327,19 @@ export default function Landing() {
                 title: 'Auditabilidade completa',
                 body: 'Cada captura registra origem, horário e regra que a gerou. O histórico é auditável e deletável a qualquer momento diretamente nas configurações.',
               },
-            ].map(({ n, icon: Icon, title, body }) => (
-              <div key={n} className="rounded-2xl border border-border bg-card p-6">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#fee8da] text-[#e8531a]">
-                    <Icon size={16} />
+            ].map(({ n, icon: Icon, title, body }, i) => (
+              <Reveal key={n} delay={i * 90}>
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-9 w-9 place-items-center rounded-xl bg-[#fee8da] text-[#e8531a]">
+                      <Icon size={16} />
+                    </div>
+                    <span className="font-mono text-xs font-bold text-[#9a9490]">{n}</span>
                   </div>
-                  <span className="font-mono text-xs font-bold text-[#9a9490]">{n}</span>
+                  <h3 className="mt-5 text-lg font-bold text-foreground">{title}</h3>
+                  <p className="mt-2.5 text-sm leading-[1.75] text-muted-foreground">{body}</p>
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-foreground">{title}</h3>
-                <p className="mt-2.5 text-sm leading-[1.75] text-muted-foreground">{body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -331,14 +371,16 @@ export default function Landing() {
                 { icon: ShieldCheck, title: 'Conformidade LGPD', body: 'Dados tratados estritamente conforme o escopo autorizado. Solicitação de exclusão disponível nas configurações.' },
                 { icon: Scale, title: 'Dados por usuário', body: 'Histórico, grupos, regras e alertas ficam segregados por conta. Nada é compartilhado ou agregado entre usuários.' },
                 { icon: BookOpen, title: 'Auditoria de acesso', body: 'Cada sessão ativa é registrada com dispositivo, IP e horário. Revogue acesso de dispositivos suspeitos na plataforma.' },
-              ].map(({ icon: Icon, title, body }) => (
-                <div key={title} className="rounded-2xl border border-border bg-card p-5">
-                  <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-accent-foreground">
-                    <Icon size={16} />
+              ].map(({ icon: Icon, title, body }, i) => (
+                <Reveal key={title} delay={i * 80}>
+                  <div className="rounded-2xl border border-border bg-card p-5">
+                    <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-accent-foreground">
+                      <Icon size={16} />
+                    </div>
+                    <h3 className="mt-4 text-sm font-bold text-foreground">{title}</h3>
+                    <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{body}</p>
                   </div>
-                  <h3 className="mt-4 text-sm font-bold text-foreground">{title}</h3>
-                  <p className="mt-2 text-[13px] leading-6 text-muted-foreground">{body}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -353,16 +395,18 @@ export default function Landing() {
                 { icon: FileText, label: 'Termos de uso', href: '/terms', desc: 'Condições de uso da plataforma, limitações de responsabilidade e escopo do serviço.' },
                 { icon: ShieldCheck, label: 'Política de privacidade', href: '/privacy', desc: 'Como os dados são coletados, processados e protegidos conforme a LGPD.' },
                 { icon: BookOpen, label: 'Central de ajuda', href: '/privacy', desc: 'Documentação operacional, FAQs e guias de configuração de regras e conexão.' },
-              ].map(({ icon: Icon, label, href, desc }) => (
-                <Link key={label} href={href} className="group hover-elevate active-elevate flex gap-4 rounded-xl border border-border bg-card p-5 hover:border-[#e8531a]/30 hover:shadow-[0_4px_16px_rgba(232,83,26,.08)]">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#fee8da] text-[#e8531a] group-hover:bg-accent">
-                    <Icon size={16} />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-foreground">{label}</div>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{desc}</p>
-                  </div>
-                </Link>
+              ].map(({ icon: Icon, label, href, desc }, i) => (
+                <Reveal key={label} delay={i * 80}>
+                  <Link href={href} className="group hover-elevate active-elevate flex gap-4 rounded-xl border border-border bg-card p-5 hover:border-[#e8531a]/30 hover:shadow-[0_4px_16px_rgba(232,83,26,.08)]">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#fee8da] text-[#e8531a] group-hover:bg-accent">
+                      <Icon size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-foreground">{label}</div>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">{desc}</p>
+                    </div>
+                  </Link>
+                </Reveal>
               ))}
             </div>
           </div>

@@ -1407,6 +1407,8 @@ function OnboardingPage() {
   const [lastName, setLastName] = useState('');
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [skipping, setSkipping] = useState(false);
+  const [, setLocation] = useLocation();
   const TOTAL_STEPS = 3;
 
   async function saveName() {
@@ -1433,11 +1435,42 @@ function OnboardingPage() {
     }
   }
 
+  // ProtectedRoute redirects back to /onboarding whenever user.firstName is
+  // empty, so a "skip" link that just navigates to /app bounces straight
+  // back — it never actually skipped anything. Skipping still has to leave
+  // *some* name behind (the dashboard greeting and other copy depend on
+  // firstName being set), so it saves one derived from the account's email
+  // instead of asking the user to type it.
+  async function skipOnboarding() {
+    setSkipping(true);
+    try {
+      const derivedName =
+        user?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
+        user?.username ||
+        'Usuário';
+      const resp = await fetch(`${basePath}/api/profile/name`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ firstName: derivedName, lastName: '' }),
+      });
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${resp.status}`);
+      }
+      await user?.reload();
+      setLocation('/app');
+    } catch (e) {
+      toast({ title: 'Não foi possível pular a configuração.', description: e instanceof Error ? e.message : 'Tente novamente.', variant: 'destructive' });
+      setSkipping(false);
+    }
+  }
+
   return (
     <div className="sw-noise min-h-[100dvh] bg-background">
       <header className="flex items-center justify-between px-5 py-6 lg:px-12">
         <Logo />
-        <Link href="/app" className="text-sm font-bold text-foreground hover:text-foreground" data-testid="link-exit-onboarding">Pular configuração</Link>
+        <button onClick={skipOnboarding} disabled={skipping} className="text-sm font-bold text-foreground hover-elevate active-elevate rounded-md px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50" data-testid="link-exit-onboarding">{skipping ? 'Pulando…' : 'Pular configuração'}</button>
       </header>
       <main className="mx-auto max-w-4xl px-5 pb-16 pt-8 lg:pt-14">
         {/* Progress bar */}
@@ -1530,9 +1563,9 @@ function OnboardingPage() {
               Conectar Telegram <ArrowRight size={16} />
             </Link>
             <div className="mt-4">
-              <Link href="/app" className="text-sm font-bold text-foreground hover:text-foreground" data-testid="link-skip-to-dashboard">
-                Ir direto para o painel
-              </Link>
+              <button onClick={skipOnboarding} disabled={skipping} className="text-sm font-bold text-foreground hover-elevate active-elevate rounded-md px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50" data-testid="link-skip-to-dashboard">
+                {skipping ? 'Entrando…' : 'Ir direto para o painel'}
+              </button>
             </div>
           </div>
         )}

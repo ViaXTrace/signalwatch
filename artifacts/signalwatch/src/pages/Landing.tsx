@@ -146,7 +146,7 @@ export default function Landing() {
                 </button>
               ))}
             </div>
-            <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#fcc4a0] opacity-40 blur-3xl" />
+            <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#fcc4a0] opacity-40 blur-3xl" />
             <div className="relative rounded-[24px] border border-[#e8531a]/20 bg-[#fee8da] p-3 shadow-[0_28px_72px_rgba(232,83,26,.18)] lg:rotate-[1deg]">
               {/* This card is intentionally always light — it's a product screenshot mockup */}
               <div className="overflow-hidden rounded-[18px] border border-[#f0c8b0] bg-[#fffcfa]">
@@ -354,7 +354,7 @@ export default function Landing() {
                 { icon: ShieldCheck, label: 'Política de privacidade', href: '/privacy', desc: 'Como os dados são coletados, processados e protegidos conforme a LGPD.' },
                 { icon: BookOpen, label: 'Central de ajuda', href: '/privacy', desc: 'Documentação operacional, FAQs e guias de configuração de regras e conexão.' },
               ].map(({ icon: Icon, label, href, desc }) => (
-                <Link key={label} href={href} className="group flex gap-4 rounded-xl border border-border bg-card p-5 hover:border-[#e8531a]/30 hover:shadow-[0_4px_16px_rgba(232,83,26,.08)]">
+                <Link key={label} href={href} className="group hover-elevate active-elevate flex gap-4 rounded-xl border border-border bg-card p-5 hover:border-[#e8531a]/30 hover:shadow-[0_4px_16px_rgba(232,83,26,.08)]">
                   <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#fee8da] text-[#e8531a] group-hover:bg-accent">
                     <Icon size={16} />
                   </div>

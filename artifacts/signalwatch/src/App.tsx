@@ -528,9 +528,27 @@ function Metric({ label, value, note, icon: Icon, tone = 'teal' }: { label: stri
   return <div className="sw-card rounded-2xl p-5"><div className="flex items-start justify-between"><div className="text-xs font-bold uppercase tracking-[.09em] text-muted-foreground">{label}</div><div className={`grid h-9 w-9 place-items-center rounded-xl ${iconColor[tone]}`}><Icon size={17} /></div></div><div className="mt-5 sw-display text-4xl font-bold tracking-[-.05em] text-foreground">{value}</div><div className="mt-1 text-xs font-medium text-muted-foreground">{note}</div></div>;
 }
 
+// Messages past this length collapse by default — long enough that a
+// typical short alert never triggers it, short enough that a wall-of-text
+// message doesn't dominate the list before the user asks to see it.
+const MESSAGE_COLLAPSE_THRESHOLD = 220;
+
+// These alerts come straight from real Telegram promo/spam messages, which
+// are frequently emoji-heavy — a plain slice() cuts on UTF-16 code units
+// and can land mid-emoji (surrogate pairs, ZWJ sequences), leaving a
+// mangled half-glyph right at the visible truncation point. Trimming a
+// dangling trailing high surrogate covers the common case cheaply, without
+// pulling in Intl.Segmenter for full grapheme-cluster correctness.
+function truncateAtCharBoundary(text: string, maxLength: number): string {
+  const sliced = text.slice(0, maxLength).trimEnd();
+  return /[\uD800-\uDBFF]$/.test(sliced) ? sliced.slice(0, -1) : sliced;
+}
+
 function AlertRow({ alert, onRead, onRemove }: { alert: Alert; onRead?: () => void; onRemove?: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isLong = alert.message.length > MESSAGE_COLLAPSE_THRESHOLD;
+  const [expanded, setExpanded] = useState(!isLong);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -554,7 +572,19 @@ function AlertRow({ alert, onRead, onRemove }: { alert: Alert; onRead?: () => vo
             <span className="text-[11px] text-muted-foreground">· {relativeDate(alert.receivedAt)}</span>
             {alert.deliveryStatus === 'unavailable' && <Pill tone="amber">Entrega indisponível</Pill>}
           </div>
-          <p className="mt-2 break-words text-sm leading-6 text-foreground">{alert.message}</p>
+          <p className="mt-2 break-words text-sm leading-6 text-foreground">
+            {expanded ? alert.message : `${truncateAtCharBoundary(alert.message, MESSAGE_COLLAPSE_THRESHOLD)}…`}
+          </p>
+          {isLong && (
+            <button
+              onClick={() => setExpanded(e => !e)}
+              className="hover-elevate active-elevate mt-2 inline-flex items-center gap-1 rounded-full border border-primary/25 bg-accent px-3 py-1 text-[11px] font-bold text-accent-foreground"
+              data-testid={`button-toggle-message-${alert.id}`}
+            >
+              {expanded ? 'Recolher' : 'Ver mensagem completa'}
+              <ChevronDown size={12} className={`transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            </button>
+          )}
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {alert.matchedKeywords.map(k => (
               <span key={k} className="rounded-md bg-accent px-2 py-1 font-mono text-[10px] font-medium text-accent-foreground">#{k}</span>
